@@ -1,0 +1,199 @@
+/* 
+	create date : 29/03/2016
+	author : sabbana
+	custom style journal 
+*/
+body, h1, h2, h3, h4, h5, h6{
+	font-family: "Roboto condensed";
+}
+.bg-white{ 
+	background-color:#fff;
+	opacity:0.9;
+	position:fixed;
+	top:0; right:0;
+	height:100%;
+	overflow:auto;
+	padding:20px;
+}
+.profile-user-img{
+	width:125px;
+	height:125px;
+}
+label > span{
+	color:#FF4444;
+}
+h5.title{
+	font-weight:bold;
+	padding-bottom:10px;
+	border-bottom:solid 2px #FF4444;
+}
+h1{
+	font-size:2em;
+}
+.content-img{
+	padding:2px;
+	margin-right:20px;
+	border:solid 1px #DDD;
+	background:#FFF;
+	float:left;
+	width:100px;
+}
+.img-thumb{
+	max-width:150px;
+	float:left;
+	border:solid 1px #CCC;
+	padding:1px;
+	margin-right:10px;
+}
+.content-list{
+	margin-top:10px;
+}
+
+/* MODAL */
+.modal-content {
+  background-clip: padding-box;
+  background-color: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  outline: 0 none;
+  position: relative;
+}
+.modal-dialog {
+  z-index: 2200;
+}
+.modal-body {
+  padding: 20px 30px 30px 30px;
+}
+.inmodal .modal-body {
+  background: #f8fafb;
+}
+.inmodal .modal-header {
+  padding: 30px 15px;
+  text-align: center;
+}
+.animated.modal.fade .modal-dialog {
+  -webkit-transform: none;
+  -ms-transform: none;
+  -o-transform: none;
+  transform: none;
+}
+.inmodal .modal-title {
+  font-size: 26px;
+}
+.inmodal .modal-icon {
+  font-size: 84px;
+  color: #e2e3e3;
+}
+.modal-footer {
+  margin-top: 0;
+}
+
+.thumb{
+	padding:2px;
+	border:solid 1px #DDD;
+	background:#eee;
+	cursor:pointer;
+	margin:0px;
+}
+.thumb:hover{
+	background:#DDD;
+	padding: 10px;
+}
+.sidebar-menu .treeview-menu > li > a > .fa,
+.sidebar-menu .treeview-menu > li > a > .glyphicon,
+.sidebar-menu .treeview-menu > li > a > .ion {
+  width: 20px;
+  margin-left:20px;
+}
+.note-editor.note-frame{border:solid 1px #DDD}
+.sidebar-content{
+	box-shadow: inset 10px 0 5px 0 #EEE;
+	padding-top: 20px;
+	padding-left: 20px;
+	margin: 0px;
+	border-left: solid 1px #DDD;
+	min-height: 1200px;
+}
+h2.hrtext {
+   width: 100%; 
+   text-align: center; 
+   border-bottom: 1px solid #DDD; 
+   line-height: 0.1em;
+   margin: 20px 0 20px; 
+   font-size:12px;
+   color: #888;
+} 
+
+h2.hrtext span { 
+    background:#DDD; 
+    padding:6px; 
+    border-radius:50px;
+}
+.nav-tabs-custom > .nav-tabs > li.active{	
+	/* border-top: solid 10px #337ab7; */
+	color:#FFF;
+}
+.col-md-5.sidebar a, .col-md-4.sidebar a{
+	color: #3c8dbc;
+}
+.list-group-item.black a{
+	color: #888;
+	display: block;
+}
+.list-group-item.black{
+	display: block;
+	background-color: #EEE;
+}
+.note{
+	background-color: #FFFFDD;
+	border: solid 1px #DDD;
+	border-bottom:none;
+	color:#222;
+	padding: 5px;
+	font-size: 0.8em;
+	font-style: italic;
+}
+.section-title{
+	padding:5px;
+	margin-bottom: 10px;
+	border-top:solid 2px #DDD;
+	text-transform: uppercase;
+	background-color: #EEE;
+	color: #222;
+	text-shadow: 0 0 5px #FFF;
+}
+.sidebar-static{	
+	position: fixed;
+	width:26.5%;
+	background-color: #FFF;
+	top:0;
+	right:20px;
+}
+.justify{
+	text-align: justify-all;
+}
+.content-static{
+	position: fixed;
+	width:67%;
+	overflow-y: scroll;
+	height: 100%;
+}
+
+.skin-black-light .sidebar-menu > li:hover > a, .skin-black-light .sidebar-menu > li.active > a{
+	background-color: #158cba;
+	color: #EEE;
+}
+.dotted {
+	/*padding: 2.25em 1.6875em;*/
+	background-image: -webkit-repeating-radial-gradient(center center, rgba(0,0,0,.2), rgba(0,0,0,.2) 1px, transparent 1px, transparent 100%);
+	background-image: -moz-repeating-radial-gradient(center center, rgba(0,0,0,.2), rgba(0,0,0,.2) 1px, transparent 1px, transparent 100%);
+	background-image: -ms-repeating-radial-gradient(center center, rgba(0,0,0,.2), rgba(0,0,0,.2) 1px, transparent 1px, transparent 100%);
+	background-image: repeating-radial-gradient(center center, rgba(0,0,0,.2), rgba(0,0,0,.2) 1px, transparent 1px, transparent 100%);
+	-webkit-background-size: 5px 5px;
+	-moz-background-size: 5px 5px;
+	background-size: 5px 5px;
+}
+.nav-tabs-custom > .nav-tabs {border-bottom-color: #ccc !important;}
+.nav-tabs-custom > .nav-tabs > li.active > a {border-right-color: #ccc !important;border-left-color: #ccc !important;}
+.dataTables_wrapper{overflow:scroll}

@@ -1,0 +1,25 @@
+<div class="content-wrapper">
+	<section class="content-header">
+		<h1>Online <small>Submission</small></h1>
+		<ol class="breadcrumb">
+			<li><a href="<?php echo base_url().'dashboard';?>"><i class="fa fa-dashboard"></i> Home</a></li>
+			<li><a href="<?php echo base_url().'dashboard/submission';?>"> Submission Review</a></li>
+			<li class="active">Certificate</li>
+		</ol>
+	</section>
+	<section class="content usetooltip">
+		<div class="box box-primary">
+			<div class="box-body">	
+				<?php 
+				$fullname =  $user[0]['salutation']." ".$user[0]['first_name']." ".$user[0]['last_name'];
+				$cd = $certificate_data;
+				?>
+				This certificate is given to <?php echo $fullname; ?><br>
+				for reviewing <?php echo $cd['sub_title']; ?><br>
+				which is completed at <?php echo date('d F Y', strtotime($cd['date_review'])); ?>	<br>
+				Depok, <?php echo date('d F Y', strtotime($cd['date_review']));?>	<br>
+				certificate ID: <?php echo $cd['sub_id'].'-'.$cd['review_id'] ?>
+			</div>
+		</div>
+	</section>
+</div>

@@ -1,0 +1,131 @@
+/* 
+	style custome application
+*/
+body{
+	font-family: "Roboto Condensed";
+}
+.navbar{
+	border:solid 1px #EEE;
+	padding: 5px;
+	background: #158cba;
+}
+.navbar-inverse .navbar-nav > li > a{
+	color: #FFF;
+}
+.navbar-inverse .navbar-nav > .active > a, 
+.navbar-inverse .navbar-nav > .active > a:hover, 
+.navbar-inverse .navbar-nav > .active > a:focus{
+	background: #FFF;
+	padding: 10px;
+	margin: 4px;
+	border-radius:5px;
+}
+.navbar-inverse .navbar-nav > li > a:hover{
+	background: #FFF;
+	border-radius:5px;
+}
+footer{
+	padding: 10px;
+	border-top: solid 1px #DDD;
+	position: relative;
+	margin-bottom:0px;
+	background: #158cba;
+	color: #EEE;
+}
+li.group{
+	padding:5px;
+	font-weight: 600;
+	border-bottom: solid 1px #DDD;
+}
+nav{
+	font-size:1.1em;
+	text-transform: uppercase;
+}
+.heading{
+	font-size: 1.5em;
+	text-transform: uppercase;
+	padding: 10px;
+	padding-left: 0px;
+	border-bottom: solid 1px #DDD;
+}
+.title{
+	font-size: 1.2em;
+}
+.sidebar{
+	box-shadow: inset 10px 0 5px 0 #EEE;
+	padding-top: 20px;
+	padding-left: 20px;
+	margin: 0px;
+	border-left: solid 1px #DDD;
+	min-height: 700px;
+}
+
+.carousel-control.right, .carousel-control.left{
+	background-image: none;
+	color:#158cba;
+}
+.carousel-inner{
+  width: 70%;
+  margin: auto;
+}
+.grey{ 
+	background-color: #EEE; 
+	display: block;
+	padding: 10px;
+}
+.white{ 
+	background-color: #FFF; 
+	display: block;
+	padding: 10px;
+}
+.note-email, .note-userid{
+	color:#FF3300;
+	padding: 3px;
+	font-style: italic;
+}
+label{
+	font-weight:700;
+}
+label span{
+	color:#FF3300;
+}
+small, .small{
+	font-size: 0.9em;
+	font-style: italic;
+	margin-top:-5px;
+}
+.alert-note {
+    background-color: #FFFFdd;
+    border-color: #FFFFbb;
+    color: #222;
+    font-size: 12px;
+}
+
+.sidebar-static{
+	background-color: #FFF;
+	position: fixed;
+	top:0;height: 100%;
+	right:0;
+}
+.section-title{
+	font-size: 1.5em;
+	padding: 5px;
+	background-color: #FEFEFE;
+	border-bottom:solid 1px #DDD;
+	border-top:solid 1px #FFF;
+}
+.br{
+	border-right:solid 1px #DDD;
+	min-height: 100px;
+}
+.bl{
+	border-left:solid 1px #DDD;
+	min-height: 200px;
+}
+.download{
+	text-align: center;
+	font-size: 2em;
+}
+.form-group p{
+	padding-left: 10px;
+}

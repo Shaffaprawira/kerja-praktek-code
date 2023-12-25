@@ -1,0 +1,324 @@
+<div class="content-wrapper">
+	<section class="content-header">
+		<h1>Online <small>Submission</small></h1>
+		<ol class="breadcrumb">
+			<li><a href="<?php echo base_url().'dashboard';?>"><i class="fa fa-dashboard"></i> Home</a></li>
+			<li><a href="<?php echo base_url().'dashboard/submission';?>"> Submission</a></li>
+			<li class="active">All Submission</li>
+		</ol>
+	</section>
+
+	<section class="content usetooltip">
+		<div class="box box-primary">
+			<div class="box-header with-border">
+				<h3 class="box-title"><i class="fa fa-newspaper-o"></i> &nbsp; Submission <?php echo $sts !== null ? '<small><i>Status: '.submission_status($sts).'</small></i>':'';?></h3>
+				<div class="box-tools pull-right">
+					<?php if (in_array(5, $this->session->userdata('role'))){?>
+						<a class="btn btn-primary btn-sm" href="<?php echo base_url().'dashboard/create/submission';?>" data-tooltip="tooltip" title="Submit new article"><i class="fa fa-plus-circle"></i></a>
+					<?php } ?>
+				</div> 
+			</div>
+			<div class="box-body">
+				<?php $no = $offset; ?>
+				<div class="row" style="background-color: #f4f4f4;padding-top: 10px;margin:5px; border:solid 1px #EEE">
+					<div class="col-md-6">
+						<div class="form-group">
+							<label>Total : </label> <span><?php echo isset($total) ? $total : 0;?> Records</span>
+							<p><?php echo 'Showing '.($no+1).' to '.($no+$perpage).' entries';?></p>
+						</div>
+					</div>
+					<?php
+						$_url = explode('/page/', current_url());
+						$url = $_url[0].'/page/1';
+					?>
+					<div class="col-md-6">
+						<form method="GET" action="<?php echo $url;?>">
+							<div class="form-group">
+								<div class="input-group">
+									<span class="input-group-addon" data-tooltip="tooltip" data-title="You can search by manuscript's title, author's firstname or lastname. For searching the manuscript's number ID, please add prefix ID, Ex: id:123"><i class="fa fa-question"></i></span>
+									<input type="search" name="q" class="form-control" placeholder="Type keyword and press enter" value="<?php echo isset($keyword) ? $keyword :'';?>">
+									<span class="input-group-addon"><i class="fa fa-search"></i></span>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+
+				<table  class="table table-striped table-hover data-tables">
+				<thead>
+					<th>No.</th>
+					<th>Submit Date</th>
+					<th>Manuscript ID</th>
+					<th>Authors</th>
+					<th>Title</th>
+					<?php if($this->uri->segment(3) == 'issue'){?>
+						<th width="100">Pages</th>					
+					<?php } ?>
+					<th>Status</th>
+					<th width="150">Action</th>
+				</thead>
+				<tbody>
+				<?php  
+					if(!empty($submission)){ 						
+						foreach($submission as $a){ $no++; 
+						$journal_id = ($a['round'] > 1 ? 'R'.($a['round']-1).'-':'').$a['section_abv'].'-'.$a['sub_id'];
+				?>
+				<tr style="<?php echo $a['sub_status'] == 7 ? 'background: #FFFFDD':'';?>">
+					<td><?php echo $no;?></td>
+					<td width="150"><?php echo $a['date_submit'] == '0000-00-00 00:00:00' ? 'Draft': ($this->lib_view->first_submit_date($a['sub_id']) ? date('d M Y - H:i', strtotime($this->lib_view->first_submit_date($a['sub_id']))):'Data migration');?></td>
+					<td width="150"><?php echo $journal_id;?></td>
+					<td><?php echo $this->lib_view->author_submission($a['sub_id']);?></td>
+					<?php if($a['sub_status'] == 9 && (in_array(2, $this->session->userdata('role')))) {?>
+					<td><a href="<?php echo site_url().'dashboard/detail/journal/'.$a['sub_id'];?>"><?php echo $a['sub_title'];?></td>
+					<?php }else{?>
+					<td><a href="<?php echo site_url().'dashboard/detail/submission/'.$a['sub_id'];?>"><?php echo $a['sub_title'];?></td>
+					<?php } ?>
+
+					<?php if($this->uri->segment(3) == 'issue'){?>
+					<td><?php echo $a['pages'];?></td>
+					<?php } ?>
+
+					<td>
+						<?php
+							if (in_array(5, $this->session->userdata('role'))){
+								echo $this->lib_view->log_submission_status($a['sub_id'], $a['round']);
+							}else{
+								if($a['sub_status'] == 7){
+									echo $this->lib_view->check_revise($a['sub_id']);
+								}else{
+									echo submission_status($a['sub_status'], $a['round']);
+									echo $a['sub_status'] == 10 ? ' (Rejected)':'';
+								}
+							}
+						?>
+					</td>
+					<td width="100">
+						<span class="btn-group">
+							<?php if($a['sub_status'] != 0){?>								
+								<a href="<?php echo site_url().'dashboard/detail/submission/'.$a['sub_id'];?>" class="btn btn-sm btn-default" data-tooltip="tooltip" title="Detail Submission"><i class="fa fa-search-plus"></i></a>
+							<?php } ?>
+
+							<?php if(in_array(5, $this->session->userdata('role')) && ($a['sub_status'] == 0 || $a['sub_status'] == 7)){
+								$screening = $this->lib_view->submission_screening($a['sub_id'], $a['round']);
+								if(!empty($screening) && $screening[count($screening)-1]['author_respond'] == 0){ ?>
+									<a href="#" class="btn btn-sm btn-info" data-tooltip="tooltip" title="Continue Revise" data-toggle="modal" data-target="#revise-agreement" onclick="return revise_agreement('<?php echo $a['sub_id'].'#'.$a['round'];?>')"><i class="fa fa-warning"></i></a>
+								<?php }else{?>
+									<a href="<?php echo site_url().'dashboard/edit/submission/'.$a['sub_id'];?>" class="btn btn-sm btn-warning" data-tooltip="tooltip" title="Edit Submission"><i class="fa fa-edit"></i></a>
+								<?php } ?>
+							<?php } ?>
+							
+							<?php if($a['sub_status'] == 0){?>
+								<a class="btn btn-sm btn-danger" href="#" data-tooltip="tooltip" title="Delete Submission" data-toggle="modal" data-target="#modalDelete" onclick="return delete_submission('<?php echo $a['sub_id'];?>')"><i class="fa fa-trash"></i></a>
+							<?php } ?>
+
+							<?php if(in_array(1, $this->session->userdata('role')) || in_array(2, $this->session->userdata('role'))) {?>
+								
+								<?php if($a['sub_status'] == 8 || $a['sub_status'] == 12){?>
+									
+									<a class="btn btn-sm btn-success" href="#" data-tooltip="tooltip" title="Publish Manuscript" data-toggle="modal" data-target="#modalPublish" onclick="return prepare_publish('<?php echo $a['sub_id'];?>')"><i class="fa fa-sign-out"></i></a>
+								
+								<?php } ?>
+								
+
+								<?php if($a['sub_status'] == 11 || $a['sub_status'] == 9){?>
+									<a class="btn btn-sm btn-success" href="<?php echo site_url().'dashboard/'.( (isset($a['read_ethics']) && ($a['read_ethics'] == 0) && (isset($a['not_publish']) && ($a['not_publish'] == 0)) ? 'migrate':'process')).'/'.$a['sub_id'];?>" data-tooltip="tooltip" title="Continue Process Manuscript"><i class="fa fa-sign-out"></i></a>
+								<?php } ?>
+							<?php } ?>
+							
+							<?php if(in_array(1, $this->session->userdata('role')) || in_array(2, $this->session->userdata('role')) ){ ?>
+								<?php if ($a['sub_status'] != 99){?>
+									<a href="#" data-tooltip="tooltip" data-toggle="modal" data-target="#modalWithDraw" title="Withdraw Manuscript" class="btn btn-sm btn-warning" onclick="return withdraw('<?php echo $a['sub_id'].'#'.substr(str_replace(array('"',"'"),'',$a['sub_title']),0,50).'...#'.$journal_id;?>')"><i class="fa fa-exclamation-circle"></i></a>
+								<?php } ?>
+
+								<a class="btn btn-sm btn-danger" href="#" data-tooltip="tooltip" title="Delete Submission" data-toggle="modal" data-target="#modalDelete" onclick="return delete_submission('<?php echo $a['sub_id'];?>')"><i class="fa fa-trash"></i></a>
+
+							<?php } ?>
+							
+						</span>
+					</td>
+				</tr>
+				<?php }}else{?>
+				<tr><td colspan="7">No data available in table</td>
+				<?php } ?>
+				</tbody>
+				</table>
+				<?php echo $paging;?>
+			</div>
+		</div>
+	</section>
+</div>
+
+
+<!-- modal delete -->
+<div class="modal inmodal" id="modalDelete" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content animated bounceInDown">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+				<span aria-hidden="true"><i class="fa fa-remove"></i></span><span class="sr-only">Close</span></button>
+				<i class="fa fa-trash modal-icon"></i>
+				<h4 class="modal-title">Delete Submission</h4>
+				<div>Remove submission from list.</div>
+			</div>
+			<form name="formdelete" action="<?php echo base_url().'dashboard/delete/submission';?>" method="POST">
+			<div class="modal-body">
+				<input type="hidden" name="page" value="<?php echo current_url();?>">
+				<input type="hidden" name="sub_id" id="item_id">
+				<div class="msg"></div>
+			</div>
+			<div class="modal-footer">
+				<input type="reset" name="reset" value="Cancel" class="btn btn-white" data-dismiss="modal">
+				<input type="submit" name="move" value="Remove" class="btn btn-danger action">
+			</div>
+			</form>
+		</div>	
+	</div>
+</div>
+
+<!-- modal withdraw -->
+<div class="modal inmodal" id="modalWithDraw" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content animated bounceInDown">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+				<span aria-hidden="true"><i class="fa fa-remove"></i></span><span class="sr-only">Close</span></button>
+				<i class="fa fa-exclamation-circle modal-icon"></i>
+				<h4 class="modal-title">Withdraw Submission</h4>
+				<div class="wdmid"></div>
+			</div>
+			<form name="formdelete" action="<?php echo base_url().'dashboard/update/submission_withdraw';?>" method="POST">
+			<div class="modal-body">
+				<input type="hidden" name="page" value="<?php echo current_url();?>">
+				<input type="hidden" name="sub_id" id="wdsub_id">
+				<div class="wdmsg"></div>
+				<div class="form-group">
+					<label>Tell us the reason <i class="fa fa-question-circle"></i></label>
+					<textarea name="reason" class="form-control" rows="3" placeholder="Reason withdraw manuscript"></textarea>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<input type="reset" name="reset" value="Cancel" class="btn btn-white" data-dismiss="modal">
+				<input type="submit" name="move" value="Confirm" class="btn btn-danger action">
+			</div>
+			</form>
+		</div>	
+	</div>
+</div>
+
+<!-- modal revise agreement -->
+<div class="modal inmodal" id="revise-agreement" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content animated bounceInDown">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+				<span aria-hidden="true"><i class="fa fa-remove"></i></span><span class="sr-only">Close</span></button>
+				<i class="fa fa-check-circle modal-icon"></i>
+				<h4 class="modal-title">Revise Agreement</h4>
+				<div>Agree to revise manuscript.</div>
+			</div>
+			<form name="revise_agreement-form" action="<?php echo base_url().'dashboard/update/revise_agreement';?>" method="POST">
+			<div class="modal-body">
+				<input type="hidden" name="sub_id" id="sub_item_id">
+				<input type="hidden" name="round" id="round">
+				<input type="hidden" name="page" value="<?php echo current_url();?>">
+				<div class="msg">If you want to revise your manuscript, please click <b>Yes</b><br/>
+				or if you want to decline your manuscript, please click <b>No</b></div>
+			</div>
+			<div class="modal-footer">
+				<input type="reset" name="reset" class="btn btn-default pull-left" value="Cancel" data-dismiss="modal">
+				<input type="submit" name="action" value="No" class="btn btn-danger">
+				<input type="submit" name="action" value="Yes" class="btn btn-success action">
+			</div>
+			</form>
+		</div>	
+	</div>
+</div>
+
+<!-- modal status -->
+<div class="modal inmodal" id="modalStatus" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content animated bounceInDown">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+				<span aria-hidden="true"><i class="fa fa-remove"></i></span><span class="sr-only">Close</span></button>
+				<i class="fa fa-check-circle modal-icon"></i>
+				<h4 class="modal-title">Status User</h4>
+				<div>Active or inactive user status.</div>
+			</div>
+			<form name="formdelete" action="<?php echo base_url().'dashboard/update/user_status';?>" method="POST">
+			<div class="modal-body">
+				<input type="hidden" name="user_id" id="user_id_status">
+				<input type="hidden" name="status" id="status">
+				<div class="msg"></div>
+			</div>
+			<div class="modal-footer">
+				<input type="reset" name="reset" value="Cancel" class="btn btn-white" data-dismiss="modal">
+				<input type="submit" name="move" value="Change" class="btn btn-warning action">
+			</div>
+			</form>
+		</div>	
+	</div>
+</div>
+
+<!-- modal publish -->
+<div class="modal inmodal" id="modalPublish" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content animated bounceInDown">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+				<span aria-hidden="true"><i class="fa fa-times"></i></span><span class="sr-only">Close</span></button>
+				<i class="fa fa-book modal-icon icon"></i>
+				<h4 class="modal-title set-header">Publish Manuscript</h4>
+				<div class="set-header-label">Rearrangement of submission manuscript to web journal format.</div>
+			</div>
+			<form name="formpublish" action="<?php echo base_url().'dashboard/insert/publish ';?>" method="POST">
+			<div class="modal-body">
+				<input type="hidden" name="sub_id" id="sub_id_publish">
+				<input type="hidden" name="page" value="<?php echo current_url();?>">
+				<div class="msg">					
+					<div class="form-group">
+						<label>Manuscript Title :</label>
+						<p id="manuscript_title"></p>
+					</div>				
+				</div>
+			</div>
+			<div class="modal-footer">
+				<input type="reset" name="reset" value="Cancel" class="btn btn-white" data-dismiss="modal">
+				<input type="submit" name="move" value="OK" class="btn btn-success action">
+			</div>
+			</form>
+		</div>	
+	</div>
+</div>
+
+<!-- modal publish -->
+<div class="modal inmodal" id="modalInline" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content animated bounceInDown">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+				<span aria-hidden="true"><i class="fa fa-times"></i></span><span class="sr-only">Close</span></button>
+				<i class="fa fa-edit modal-icon icon"></i>
+				<h4 class="modal-title set-header">Inline Editing</h4>
+				<div class="set-header-label">Send confirmation about inline editing process.</div>
+			</div>
+			<form name="formpublish" action="<?php echo base_url().'dashboard/update/inline_editing ';?>" method="POST">
+			<div class="modal-body">
+				<input type="hidden" name="sub_id" id="sub_id_inline">
+				<input type="hidden" name="page" value="<?php echo current_url();?>">
+				<div class="msg">					
+					<div class="form-group">
+						<label>Manuscript Title :</label>
+						<p id="manuscript_title_inline"></p>
+						<p class="callout callout-default"><i class="fa fa-info-circle"></i> Send confirmation about inline editing process to corresponding author?</p>
+					</div>				
+				</div>
+			</div>
+			<div class="modal-footer">
+				<input type="reset" name="reset" value="Cancel" class="btn btn-white" data-dismiss="modal">
+				<input type="submit" name="move" value="OK" class="btn btn-success action">
+			</div>
+			</form>
+		</div>	
+	</div>
+</div>

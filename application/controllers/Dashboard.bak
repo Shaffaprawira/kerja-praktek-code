@@ -1,0 +1,1307 @@
+<?php
+
+/**
+ * @author: Sabbana 
+ * @corp: pajon/sstud-io.net
+ * @date: 20-09-2016
+ */
+
+class Dashboard extends CI_Controller{
+
+	var $data = array();
+
+	public function __construct(){
+		parent::__construct();
+		$this->load->model('Mdl_cms','cms');
+		$this->load->library('Lib_cms');
+	}
+
+	private function allow_access($roles= array()){
+		$user_roles = $this->session->userdata('role');
+		if(empty($user_roles)) redirect('login');
+		if(empty($roles))
+			redirect('dashboard');
+		else{
+			$is_rules = array_intersect($user_roles, $roles);
+			if(empty($is_rules))
+				redirect('dashboard');
+		}		
+	}
+
+	public function test($sub_id){
+		echo "Pass screening by EIC : ";
+		var_dump($this->cms->is_pass_screening_by_eic($sub_id));
+	}
+
+	private function log_submission($sub_id, $status, $desc){
+		$role = $this->session->userdata('role');
+		if(empty($role)) redirect('login');
+		return $this->cms->log_submission($sub_id, $status, $desc);
+	}
+
+	private function log($event, $table, $key){
+		return $this->cms->log($this->session->userdata('user_id'), $event, $table, $key);
+	}
+
+	public function index(){		
+		$role = $this->session->userdata('role');
+		$section = $this->session->userdata('editor_section');
+
+		if(empty($role)) redirect('login');
+		$email = $this->session->userdata('email');
+		$this->data['page'] = 'page/home';
+		$this->data['all'] = $this->cms->count_submission_status();
+		$this->data['screening'] = $this->cms->count_submission_status(1);
+		$this->data['published'] = $this->cms->count_submission_status(9);
+		$this->data['revise'] = $this->cms->count_submission_status(7);
+		$this->data['new'] = $this->cms->count_submission_status(1);
+		$this->data['received'] = $this->cms->count_submission_status(5);
+		$this->data['accepted'] = $this->cms->count_submission_status(8);
+		$this->data['inpress'] = $this->cms->count_submission_status(11);
+		$this->data['completed'] = $this->cms->count_submission_status('completed');
+
+
+		$this->data['last_submitted'] = $this->cms->get_submission_status_limit(1, 5);
+		$this->data['last_accepted'] = $this->cms->get_submission_status_limit(8, 5);
+		$this->data['submission_review'] = $this->cms->get_journal_review_user($email);
+
+		if(in_array(4, $role)){			
+			$this->data['new'] = $this->cms->count_submission_status_by_section($section, 1);
+			$this->data['received'] = $this->cms->count_submission_status_by_section($section, 5);
+			$this->data['completed'] = $this->cms->count_submission_status_by_section($section, 'completed');			
+		}
+
+		if(count($role) == 1 && in_array(6, $role)){
+			$this->data['review_active'] = count($this->cms->get_journal_review_user($email, 'active'));
+			$this->data['review_archive'] = count($this->cms->get_journal_review_user($email, 'archive'));
+		}		
+
+		if(in_array(1, $role) || in_array(2, $role)){
+			$this->data['alluser'] = $this->cms->count_user();
+			$this->data['editor'] = $this->cms->count_user(3);
+			$this->data['section_editor'] = $this->cms->count_user(4);
+			$this->data['author'] = $this->cms->count_user(5);
+			$this->data['reviewer'] = $this->cms->count_user(6);
+		}
+		$this->load->view('template', $this->data);
+	}
+
+	/*
+	 * @ general crud controller
+	 * @ crudname [param]
+	 */
+	public function create($param, $id=''){
+		$role = $this->session->userdata('role');
+		if(empty($role)) redirect('login');
+		switch($param){
+			case "announcement":{
+				$this->allow_access(array(1,2));
+				$this->data['title'] = 'Create Announcement';
+				$this->data['page'] = 'page/form_announcement';
+			} break;
+			case "section":{
+				$this->allow_access(array(1,2));
+				$this->data['title'] = 'Create New Section';
+				$this->data['editors'] = $this->cms->get_available_editor();
+				$this->data['page'] = 'page/form_section';			
+			} break;
+			case "issue":{
+				$this->allow_access(array(1,2));
+				$this->data['title'] = 'Create Issue';
+				$this->data['page'] = 'page/form_issue';			
+			} break;
+			case "people":{
+				$this->allow_access(array(1,2));
+				$this->data['title'] = 'Add People';
+				$this->data['countries'] = $this->cms->get_countries();
+				$this->data['page'] = 'page/form_people';			
+			} break;
+			case "user":{
+				$this->allow_access(array(1,2));
+				$this->data['title'] = 'Register New User';
+				$this->data['section'] = $this->cms->get_all_section();
+				$this->data['page'] = 'page/register';			
+			} break;
+
+			# submission module transaction 
+			case "submission":{
+				$uid = $this->session->userdata('user_id');
+				$enable = $this->lib_view->check_profile($uid);
+				if($enable == false)
+					redirect('dashboard/edit/profile/'.md5($uid));
+
+				$this->data['title'] = 'Submit Article';
+				$this->data['section'] = $this->cms->get_all_section();				
+				$this->data['page'] = 'page/form_submission';			
+			} break;
+			
+			# editorial
+			case "editorial":{
+				$this->data['title'] = 'Submit Article';
+				$this->data['issue'] = $this->cms->get_all_issue();
+				$this->data['section'] = $this->cms->get_all_section();				
+				$this->data['page'] = 'page/form_editorial';			
+			} break;
+			case "author":{
+				if ($id !== ''){
+					$this->data['title'] = 'Article Authors';
+					$this->data['action'] = 'create';
+					$this->data['countries'] = $this->cms->get_countries();
+					$this->data['authors'] = $this->cms->get_author_submission($id);
+					#$this->data['existing_author'] = $this->cms->get_existing_authors($id);
+					$this->data['page'] = 'page/form_submission';
+				}else{
+					$this->session->set_flashdata('warning','You can not skip to this state before fill the article data!');
+					redirect('dashboard/create/submission');
+				}				
+			} break;
+			case "suplement":{
+				if ($id !== ''){
+					$this->data['sub'] = $this->cms->current_submission($id);
+					$this->data['title'] = 'Upload Suplement File';
+					$this->data['suplement'] = $this->cms->get_submission_file($id, $this->data['sub'][0]['round']);
+					$this->data['page'] = 'page/form_submission';
+				}else{
+					$this->session->set_flashdata('warning','You can not skip to this state before fill the article data!');
+					redirect('dashboard/create/submission');
+				}				
+			} break;
+			case "reviewer":{
+				if ($id !== ''){
+					$this->data['title'] = 'Suggest Reviewer';
+					$this->data['action'] = 'create';
+					$this->data['reviewer'] = $this->cms->get_reviewers($id);
+					#$this->data['existing_reviewer'] = $this->cms->get_existing_reviewers($id);
+					$this->data['sub'] = $this->cms->current_submission($id);
+					$this->data['page'] = 'page/form_submission';
+				}else{
+					$this->session->set_flashdata('warning','You can not skip to this state before fill the article data!');
+					redirect('dashboard/create/submission');
+				}				
+			} break;
+			case "agreement":{
+				if ($id !== ''){
+					$this->data['sub'] = $this->cms->current_submission($id);
+					$this->data['doc'] = $this->cms->get_manuscript_file_type($id, $this->data['sub'][0]['round'], 1);
+                	$this->data['pdf'] = $this->cms->get_manuscript_file_type($id, $this->data['sub'][0]['round'], 2);
+					$this->data['suplement'] = $this->cms->get_submission_file($id, $this->data['sub'][0]['round']);
+					$this->data['title'] = 'Journal Agreement';
+					$this->data['authors'] = $this->cms->get_author_submission($id);
+					$this->data['reviewer'] = $this->cms->get_reviewers($id);
+					$this->data['funders'] = $this->cms->get_submission_funder($id);
+					$this->data['page'] = 'page/form_submission';
+				}else{
+					$this->session->set_flashdata('warning','You can not skip to this state before fill the article data!');
+					redirect('dashboard/create/submission');
+				}				
+			} break;
+			# end submission transaction module 
+			case "page":{
+				$this->allow_access(array(1,2));
+				$this->data['title'] = 'Create Page';
+				$this->data['page'] = 'page/form_page';
+			} break;
+			default:{
+				$this->session->set_flashdata('info','Wrong request page!');
+				redirect('dashboard');
+			} break;
+		}
+		$this->load->view('template', $this->data);
+	}
+	
+	public function edit($param, $id='', $id2 = ''){
+		$role = $this->session->userdata('role');
+		if(empty($role)) redirect('login');
+		switch($param){
+			case "announcement":{
+				$this->data['title'] = 'Edit Announcement';
+				$this->data['ann'] = $this->cms->current_announcement($id);
+				$this->data['page'] = 'page/form_announcement';
+			} break;
+			case "section":{
+				$this->data['title'] = 'Edit Section';
+				$this->data['item'] = $this->cms->current_section($id);
+				$this->data['editors'] = $this->cms->get_available_editor($id);
+				$this->data['section_editor'] = $this->cms->get_section_editor($id);
+				$this->data['page'] = 'page/form_section';
+			} break;
+			case "issue":{
+				$this->data['title'] = 'Edit Issue';
+				$this->data['item'] = $this->cms->current_issue($id);
+				$this->data['page'] = 'page/form_issue';
+			} break;
+			case "password":{
+				$this->data['title'] = 'Change Password';				
+				$this->data['page'] = 'page/change_password';
+			} break;
+			case "page":{
+				$this->data['title'] = 'Edit Page';
+				$this->data['item'] = $this->cms->current_page($id);
+				$this->data['page'] = 'page/form_page';
+			} break;
+			case "people":{
+				$this->data['title'] = 'Edit People';
+				$this->data['item'] = $this->cms->current_people($id);
+				$this->data['countries'] = $this->cms->get_countries();
+				$this->data['page'] = 'page/form_people';
+			} break;
+			case "profile":{
+				$this->data['countries'] = $this->cms->get_countries();
+				$this->data['section'] = $this->cms->get_all_section();
+				$this->data['title'] = 'Profile User';
+				$this->data['page'] = 'page/profile';
+				if(in_array(1, $this->session->userdata('role')) || in_array(2, $this->session->userdata('role'))){
+					if($id == "")
+						$id = md5($this->session->userdata('user_id'));
+				}else{
+					if($id == "" || $id !== md5($this->session->userdata('user_id')))
+						redirect('dashboard/profile/'.md5($this->session->userdata('user_id')));
+				}
+				$this->data['user'] = $this->cms->get_user($id);
+			} break;
+			case "submission":{
+				$this->data['title'] = 'Update Submission Article';
+				$this->data['issue'] = $this->cms->get_all_issue();
+				$this->data['section'] = $this->cms->get_all_section();
+				$this->data['sub'] = $this->cms->current_submission($id);
+				$this->data['page'] = 'page/form_submission';
+			} break;
+			case "detail":{
+				if($id !== ""){
+					$this->data['title'] = 'Detail Article';
+					$this->data['sub'] = $this->cms->current_submission($id);
+					$this->data['cover'] = $this->cms->get_manuscript_file_type($id, $this->data['sub'][0]['round'], 5);
+					$this->data['funders'] = $this->cms->get_submission_funder($id);
+					$this->data['page'] = 'page/form_submission';
+				}else{
+					$this->session->set_flashdata('warning','You can not skip to this state before fill the article data!');
+					redirect('dashboard/create/submission');
+				}	
+			} break;
+			case "reviewer":{
+				$this->data['title'] = 'Edit Reviewer';
+				$this->data['action'] = 'edit';
+				$this->data['sub'] = $this->cms->current_submission($id);
+				$this->data['reviewer'] = $this->cms->get_reviewers($id);
+				$this->data['cr'] = $this->cms->get_current_reviewer($id2);
+				$this->data['page'] = 'page/form_submission';
+			} break;
+			case "author":{
+				$this->data['title'] = 'Edit Author';
+				$this->data['action'] = 'edit';
+				$this->data['sub'] = $this->cms->current_submission($id);
+				$this->data['authors'] = $this->cms->get_author_submission($id);
+				$this->data['countries'] = $this->cms->get_countries();
+				$this->data['ca'] = $this->cms->get_current_author($id2);
+				$this->data['page'] = 'page/form_submission';
+			} break;
+			default:{
+				$this->session->set_flashdata('info','Wrong request page!');
+				redirect('dashboard');
+			} break;
+		}
+		$this->load->view('template', $this->data);
+	}
+	
+	public function insert($param){
+		$role = $this->session->userdata('role');
+		if(empty($role)) redirect('login');
+		switch($param){
+			case "announcement": $this->lib_cms->insert_announcement(); break;
+			case "section": $this->lib_cms->insert_section(); break;
+			case "section_editor": $this->lib_cms->insert_section_editor(); break;
+			case "issue": $this->lib_cms->insert_issue(); break;
+			case "page": $this->lib_cms->insert_page(); break;
+			case "people": $this->lib_cms->insert_people(); break;
+			case "user": $this->lib_cms->insert_user(); break;
+			case "submission": $this->lib_cms->insert_submission(); break;
+			case "suplement": $this->lib_cms->insert_suplement(); break;
+			case "author": $this->lib_cms->insert_author(); break;
+			case "send_response_letter": $this->lib_cms->send_response_letter(); break;
+			case "selected_author": $this->lib_cms->insert_selected_author(); break;
+			case "selected_reviewer": $this->lib_cms->insert_selected_reviewer(); break;
+			case "reviewer": $this->lib_cms->insert_reviewer(); break;
+			case "upload_review": $this->lib_cms->upload_review(); break;
+			case "review": $this->lib_cms->insert_review(); break;
+			case "funder": $this->lib_cms->insert_funder(); break;
+			case "agreement": $this->lib_cms->insert_agreement(); break;
+			case "journal": $this->lib_cms->save_journal(); break;
+			case "publish": $this->lib_cms->publish_submission(); break;
+			case "publish_journal": $this->lib_cms->publish_journal(); break;
+			case "migrate": $this->lib_cms->migrate_journal(); break;
+			default:{
+				$this->session->set_flashdata('info','Wrong request page!');
+				redirect('dashboard');
+			} break;
+		}
+	}
+
+
+	
+	public function update($param){
+		$role = $this->session->userdata('role');
+		if(empty($role)) redirect('login');
+		switch($param){
+			case "announcement": $this->lib_cms->update_announcement(); break;
+			case "section":$this->lib_cms->update_section(); break;
+			case "submission":$this->lib_cms->update_submission(); break;
+			case "submission_withdraw":$this->lib_cms->withdraw(); break;
+			case "screening":$this->lib_cms->submission_screening(); break;
+			case "revise_agreement":$this->lib_cms->revise_agreement(); break;
+			case "inline_editing":$this->lib_cms->inline_editing_process(); break;
+			case "submission_detail":$this->lib_cms->update_submission('detail'); break;
+			case "reviewer":$this->lib_cms->update_reviewer(); break;
+			case "author":$this->lib_cms->update_author(); break;
+			case "coauthor":$this->lib_cms->set_coauthor(); break;
+			case "review_status":$this->lib_cms->update_review_status(); break;
+			case "reviewer_status":$this->lib_cms->update_reviewer_status(); break;
+			case "status_submission":$this->lib_cms->save_decision(); break;
+			case "editor_decision":$this->lib_cms->save_editor_decision(); break;
+			case "issue":$this->lib_cms->update_issue(); break;
+			case "issue_status":$this->lib_cms->update_issue_status(); break;			
+			case "password":$this->lib_cms->change_password(); break;
+			case "reset_password":$this->lib_cms->reset_password(); break;
+			case "profile":$this->lib_cms->update_user(); break;
+			case "user_status":$this->lib_cms->change_user_status(); break;
+			case "user_privilage":$this->lib_cms->change_privilage(); break;
+			case "page":$this->lib_cms->update_page(); break;
+			case "sort_author":$this->lib_cms->sort_author(); break;
+			case "avatar": $this->lib_cms->change_avatar(); break;
+			case "people": $this->lib_cms->update_people(); break;
+			default:{
+				$this->session->set_flashdata('info','Wrong request page!');
+				redirect('dashboard');
+			} break;
+		}
+	}
+	
+	public function detail($param, $id){
+		$role = $this->session->userdata('role');
+		if(empty($role)) redirect('login');
+		switch($param){
+			case "submission": {
+				# check user who open the submission, if role an editor then update status
+				$this->data['sub'] = $this->cms->current_submission($id);				
+				$this->data['suplement'] = $this->cms->get_submission_file($id, $this->data['sub'][0]['round']);
+				$this->data['title'] = isset($this->data['sub'][0]['sub_title']) ? $this->data['sub'][0]['sub_title']:'Detail Submission';
+				$this->data['existing_reviewer'] = $this->cms->get_existing_reviewers($id);				
+
+				for($x=1; $x <= $this->data['sub'][0]['round']; $x++){
+					$this->data['preview'][$x] = $this->cms->get_manuscript_file_type($id, $x, 0);
+					$this->data['images'][$x] = $this->cms->get_manuscript_file_type($id, $x, 3);
+					$this->data['cover'][$x] = $this->cms->get_manuscript_file_type($id, $x, 5);
+					$this->data['letter'][$x] = $this->cms->get_manuscript_file_type($id, $x, 4);
+					$this->data['doc'][$x] = $this->cms->get_manuscript_file_type($id, $x, 1);
+	                $this->data['pdf'][$x] = $this->cms->get_manuscript_file_type($id, $x, 2);
+	            }
+
+	            $this->data['last_screening'] = $this->cms->get_last_screening($id);
+	            $this->data['section'] = $this->cms->get_all_section();
+				$this->data['issue'] = $this->cms->get_all_issue();
+				$this->data['review_result'] = $this->cms->get_review_submission($id, $this->data['sub'][0]['round']);
+				$this->data['page'] = 'page/detail_submission';
+			} break;
+
+			case "journal": {
+				$this->data['sub'] = $this->cms->get_current_journal($id);
+				$this->data['title'] = isset($this->data['sub'][0]['sub_title']) ? $this->data['sub'][0]['sub_title']:'Journal Detail';
+				$this->data['page'] = 'page/journal_detail';
+			} break;
+
+			default:{
+				$this->session->set_flashdata('info','Wrong request page!');
+				redirect('dashboard');
+			} break;
+		}
+		$this->load->view('template', $this->data);	
+	}
+
+	/**
+	 * review result preview from author
+	 * ajax request
+	 **/
+	public function review_result(){
+		if (IS_AJAX){
+			$id = $this->input->post('sub_id');
+			$round = $this->input->post('round');
+			$data = array();
+			for ($a=1; $a<=$round; $a++){
+				$data[$a] = $this->cms->get_review_submission($id, $a);
+			}
+			// echo json_encode($data); die;
+			$point = array("originality","technical","methodology","readability","practicability","organization","importance");
+			$val = array("-", "poor","fair","average","above average","excellent");
+			if(!empty($data[1])){
+				$html = '<div class="box-group" id="accordion">';
+				for ($b=1; $b<=$round; $b++){
+					if(!empty($data[$b])){ 
+						$no=0; 
+						$html .= '
+						<div class="panel" style="margin:0px;border-top:solid 1px #DDD">
+						    <div class="box-header with-border" style="background-color:#EEE">
+						      <h5 class="box-title" style="font-weight:normal;font-size:14px">
+						        <a data-toggle="collapse" data-parent="#accordion" href="#collapse'.$b.'" aria-expanded="'.($b == $round ? 'true':'false').'" class="'.($b == $round ? 'collapsed':'').'">
+						          Review Manuscript '.($b > 1 ? '(R'.($b-1).')':'').'
+						        </a>
+						      </h5>
+						    </div>
+						    <div id="collapse'.$b.'" class="panel-collapse collapse '.($b == $round ? 'in':'').'" aria-expanded="'.($b == $round ? 'true':'false').'" style="">
+						    	<div class="box-body">';
+						foreach($data[$b] as $rs){ $no++;
+							$identity = in_array(5, $this->session->userdata('role')) || in_array(6, $this->session->userdata('role')) ? '': ': '.$rs['reviewer_email'].'<br/><small style="font-style:italic" class="text-warning"> &nbsp; <i class="fa fa-warning"></i> Hidden for author(s)</small>';							
+							$html .= 
+									'<table class="" width="100%">
+										<tr><td valign="top">Reviewer</td><td> '.$identity.'<span class="btn btn-default btn-lg pull-right">'.$no.'</span></td></tr>							
+										<tr><td>Date Review</td><td>: '.date('d M Y - H:i', strtotime($rs['date_review'])).'</td></tr>
+										<tr><td valign="top">Introduction</td><td>: '.strip_tags($rs['introduction_comment']).'</td></tr>
+										<tr><td valign="top">Methodology</td><td>: '.strip_tags($rs['methodology_comment']).'</td></tr>
+										<tr><td valign="top">Results and Discussion</td><td>: '.strip_tags($rs['result_comment']).'</td></tr>
+										<tr><td valign="top">References</td><td>: '.strip_tags($rs['references_comment']).'</td></tr>
+										<tr><td valign="top">Other</td><td>: '.strip_tags($rs['other_comment']).'</td></tr>
+										<tr><td colspan="2">
+											<table class="table table-bordered table-striped">';
+
+										for($a=0; $a<count($point); $a++){
+											$html .= '<tr><td width="100">'.ucwords($point[$a]).'</td><td>'.(isset($rs[$point[$a]]) ? $rs[$point[$a]]."<i> (".$val[$rs[$point[$a]]].")</i>":'').'</td></tr>';
+										}
+										$html .= '</table>
+										</td></tr>
+										<tr><td>Result</td><td>'.review_result($rs['review_result']).'</td></tr>
+										<tr><td>Additional Comment</td><td>'.$rs['additional_comment'].'</td></tr>
+										<tr><td><b>Attachment File:</b><br/>';
+
+										if($rs['review_url'] != ""){
+											$html .= '<a href="'.site_url().$rs['review_url'].'">Review Attachment</a>';
+										}else{ $html .= "-"; }
+										$html .= '</td></tr>
+									</table><hr/>';							
+						}
+						$html .= '</div></div></div>';
+					}
+				}
+				$html .= '</div>';
+			}else{ $html = '<div class="callout callout-info"><i class="fa fa-info-circle"></i> There are no reviews yet for this manuscript!</div>'; }
+			echo $html;
+		}
+	}
+
+	public function delete($param, $id="", $id2=""){
+		$role = $this->session->userdata('role');
+		if(empty($role)) redirect('login');
+		switch($param){
+			case "announcement": $this->lib_cms->delete_announcement(); break;
+			case "section": $this->lib_cms->delete_section(); break;
+			case "section_editor": $this->lib_cms->delete_section_editor($id, $id2); break;
+			case "submission": $this->lib_cms->delete_submission($id, $id2); break;
+			case "funder": $this->lib_cms->delete_funder(); break;
+			case "suplement": $this->lib_cms->delete_suplement_file($id, $id2); break;
+			case "author": $this->lib_cms->delete_author($id, $id2); break;
+			case "author_migrate": $this->lib_cms->delete_author($id, $id2, true); break;
+			case "reviewer": $this->lib_cms->delete_reviewer($id, $id2); break;
+			case "issue": $this->lib_cms->delete_issue(); break;
+			case "user": $this->lib_cms->delete_user(); break;
+			default:{
+				$this->session->set_flashdata('info','Wrong request page!');
+				redirect('dashboard');
+			} break;
+		}
+	}
+
+	# draft message sent
+	public function messages($screening_id){
+		$role = $this->session->userdata('role');
+		if(empty($role)) redirect('login');
+		$data['msg'] = $this->cms->get_message_screening($screening_id);
+		$this->load->view('template/page/message_screening', $data);
+	}
+
+	# cover letter string
+	public function cover_letter($sub_id, $round){
+		$role = $this->session->userdata('role');
+		if(empty($role)) redirect('login');
+		$data['sub'] = $this->cms->current_submission($sub_id);
+		$data['cover'] = $this->cms->get_manuscript_file_type($sub_id, $round, 5);
+		$this->load->view('template/page/cover_letter', $data);
+	}
+
+	# page list data
+	# ============================================================
+	public function profile($id = ""){
+		$role = $this->session->userdata('role');
+		if(empty($role)) redirect('login');
+		if(in_array(1, $role) || in_array(2, $role)){
+			if($id == "")
+				$id = md5($this->session->userdata('user_id'));
+		}else{
+			if($id == "" || $id !== md5($this->session->userdata('user_id')))
+				redirect('dashboard/profile/'.md5($this->session->userdata('user_id')));
+		}
+		
+		$this->data['title'] = 'Profile User';
+		$this->data['page'] = 'page/profile';
+		$this->data['user'] = $this->cms->get_user($id);
+		$this->data['user_role'] = $this->cms->get_role_user($id);
+		$this->load->view('template', $this->data);
+	}
+
+	public function announcement(){
+		$role = $this->session->userdata('role');
+		if(empty($role)) redirect('login');
+		$this->allow_access(array(1,2));
+		$this->data['title'] = 'Announcement';
+		$this->data['page'] = 'page/announcement';
+		$this->data['announcement'] = $this->cms->get_all_announcement();
+		$this->load->view('template', $this->data);
+	}
+	
+	public function section(){
+		$role = $this->session->userdata('role');
+		if(empty($role)) redirect('login');
+		$this->allow_access(array(1,2));
+		$this->data['title'] = 'Journal Section';
+		$this->data['page'] = 'page/section';
+		$this->data['section'] = $this->cms->get_all_section();
+		$this->load->view('template', $this->data);
+	}
+
+	public function people(){
+		$role = $this->session->userdata('role');
+		if(empty($role)) redirect('login');
+		$this->allow_access(array(1,2));
+		$this->data['title'] = 'Editorial Team';
+		$this->data['page'] = 'page/editorial_team';
+		$this->data['people'] = $this->cms->people();
+		$this->load->view('template', $this->data);
+	}
+
+	public function issue(){
+		$role = $this->session->userdata('role');
+		if(empty($role)) redirect('login');
+		$this->allow_access(array(1,2));
+		$this->data['title'] = 'Journal Issues';
+		$this->data['page'] = 'page/issue';
+		$this->data['issue'] = $this->cms->get_all_issue();
+		$this->load->view('template', $this->data);
+	}
+
+	public function about(){
+		$role = $this->session->userdata('role');
+		if(empty($role)) redirect('login');
+		$this->allow_access(array(1,2));
+		$this->data['page'] = 'page/pages';
+		$this->data['static'] = $this->cms->get_all_page();
+		$this->load->view('template', $this->data);
+	}
+
+	public function submission($rolename, $param = null, $status = null){
+		$role = $this->session->userdata('role');
+		if(empty($role)) redirect('login');
+		$user_id = $this->session->userdata('user_id');
+		$this->load->library('pagination');
+		$this->data['title'] = 'Submission';
+		$this->data['page'] = 'page/submission';
+		$this->data['sts'] = $status;
+		$this->data['issue'] = $this->cms->get_all_issue();
+		# config paging submission
+		$this->data['perpage'] = 10;
+		$config = array(
+			'per_page'		 	=> $this->data['perpage'],
+			'num_links'			=> 2,			
+			'full_tag_open'	 	=> '<div class="pull-right"><ul class="pagination pagination-sm">',
+			'full_tag_close' 	=> '</ul></div>',
+			'cur_tag_open'	 	=> '<li class="active"><a href="#">',
+			'cur_tag_close' 	=> '</a></li>',
+			'num_tag_open'		=> '<li>',
+			'num_tag_close'		=> '</li>',
+			'prev_tag_open' 	=> '<li class="prev">',
+			'prev_tag_close' 	=> '</li>',
+			'next_tag_open' 	=> '<li class="next">',
+			'next_tag_close' 	=> '</li>',
+			'prev_link'			=> '<i class="fa fa-chevron-left"></i>',
+			'next_link'			=> '<i class="fa fa-chevron-right"></i>',
+			'first_tag_open'	=> '<li>',
+			'first_tag_close'	=> '</li>',
+			'first_link'		=> '&laquo; First',
+			'last_link'			=> 'Last &raquo; ',
+			'last_tag_open'		=> '<li>',
+			'last_tag_close'	=> '</li>',			
+			'use_page_numbers' 	=> TRUE,
+			'reuse_query_string' => TRUE,		
+		);		
+		$keyword = isset($_GET['q']) ? $_GET['q'] : null;
+		$this->data['keyword'] = $keyword;
+		# base config for pagination 
+		# ------------------------------------------------------
+		switch ($rolename) {
+			case 'secretariat':{
+
+				if($param != ''){
+					if($param == 'status'){
+						# submission status
+						$this->data['total'] = $keyword ? $this->cms->count_submission_status_by_keyword($keyword, $status) : $this->cms->count_submission_status($status);
+						$config['base_url'] = base_url().'dashboard/submission/secretariat/'.$param.'/'.$status.'/page/';
+						$config['total_rows'] = $this->data['total'];
+						$offset = $this->uri->segment(7) ? (($this->uri->segment(7)-1) * $config['per_page']) : 0;
+						$this->data['offset'] = $offset;
+						$this->data['submission'] = $this->cms->get_submission_status_paging($status, $config['per_page'], $offset, $keyword);					
+					}else if($param == 'page'){
+						# all submission
+						$this->data['total'] = $this->cms->count_all_submission_secretariat_keyword($keyword);
+						$config['base_url'] = base_url().'dashboard/submission/secretariat/page/';
+						$config['total_rows'] = $this->data['total'];
+						$offset = $this->uri->segment(5) ? (($this->uri->segment(5)-1) * $config['per_page']) : 0;
+						$this->data['offset'] = $offset;
+						$this->data['submission'] = $this->cms->get_all_submission_secretariat_paging($config['per_page'], $offset, $keyword);
+					}else{
+						redirect('dashboard');
+					}
+				}else{
+					# all submission dashboard/submission/secretariat/page/3
+					$this->data['total'] = $this->cms->count_all_submission_secretariat_keyword($keyword);
+					$config['base_url'] = base_url().'dashboard/submission/secretariat/page/';
+					$config['total_rows'] = $this->data['total'];
+					$offset = $this->uri->segment(5) ? (($this->uri->segment(5)-1) * $config['per_page']) : 0;
+					$this->data['offset'] = $offset;
+					$this->data['submission'] = $this->cms->get_all_submission_secretariat_paging($config['per_page'], $offset, $keyword);
+				}
+			}break;
+
+			case 'editor':{
+				$section = $this->session->userdata('editor_section');
+				if($param != ''){
+					if($status != ''){
+						$this->data['total'] = $this->cms->count_all_submission_editor_section_keyword($section, $status, $keyword);
+						$config['base_url'] = base_url().'dashboard/submission/editor/'.$param.'/'.$status.'/page/';
+						$config['total_rows'] = $this->data['total'];
+						$offset = $this->uri->segment(7) ? (($this->uri->segment(7)-1) * $config['per_page']) : 0;
+						$this->data['offset'] = $offset;
+						$this->data['submission'] = $this->cms->get_all_submission_editor_section_keyword($section, $status, $config['per_page'], $offset, $keyword);
+					}
+				}
+
+			} break;
+			
+			case 'author':{
+
+				if($param != ''){
+					if($param == 'status'){
+						$this->data['total'] = $this->cms->count_all_submission_author_keyword($user_id, $status, $keyword);
+						$config['base_url'] = base_url().'dashboard/submission/'.$param.'/'.$status.'/page/';
+						$config['total_rows'] = $this->data['total'];
+						$offset = $this->uri->segment(7) ? (($this->uri->segment(7)-1) * $config['per_page']) : 0;
+						$this->data['offset'] = $offset;
+						$this->data['submission'] = $this->cms->get_all_submission_author_paging($user_id, $status, $config['per_page'], $offset, $keyword);
+					}else redirect('dashboard');
+				}
+			} break;
+			
+			case 'issue':{
+				$this->data['submission'] = $this->cms->get_journal_issue($param);
+				$this->data['total'] = count($this->data['submission']);
+				$this->data['offset'] = 1;
+			} break;
+
+			default:
+				redirect('dashboard');
+				break;
+		}
+
+		/*
+		if(in_array(5, $role)){
+			$this->data['sts'] = null;
+			if($param == 'status'){
+				if($status !== null){
+					$this->data['total'] = $this->cms->count_all_submission_by_keyword($user_id, $status, $keyword);
+					$config['base_url'] = base_url().'dashboard/submission/'.$param.'/'.$status.'/page/';
+					$config['total_rows'] = $this->data['total'];
+					$offset = $this->uri->segment(6) ? (($this->uri->segment(6)-1) * $config['per_page']) : 0;
+					$this->data['submission'] = $this->cms->get_all_submission_paging($user_id, $status, $config['per_page'], $offset, $keyword);
+				}
+			}
+		}
+		
+		if(in_array(1, $role) || in_array(2, $role) || in_array(3, $role)){
+			$this->data['submission'] = $this->cms->get_all_submission();			
+			if($param == 'status'){
+				if($status !== null){
+					$this->data['total'] = $keyword ? $this->cms->count_submission_status_by_keyword($keyword, $status) : $this->cms->count_submission_status($status);
+					$config['base_url'] = base_url().'dashboard/submission/'.$param.'/'.$status.'/page/';
+					$config['total_rows'] = $this->data['total'];
+					$offset = $this->uri->segment(6) ? (($this->uri->segment(6)-1) * $config['per_page']) : 0;
+					$this->data['submission'] = $this->cms->get_submission_status_paging($status, $config['per_page'], $offset, $keyword);
+				}else{
+					$this->data['total'] = $this->cms->count_all_submission_by_keyword(null, $status, $keyword);
+					$config['base_url'] = base_url().'dashboard/submission/page/';
+					$config['total_rows'] = $this->data['total'];
+					$offset = $this->uri->segment(4) ? (($this->uri->segment(4)-1) * $config['per_page']) : 0;
+					$this->data['submission'] = $this->cms->get_all_submission_paging(null, $status, $config['per_page'], $offset, $keyword);	
+				}
+			}else{
+				$this->data['total'] = $this->cms->count_all_submission_by_keyword(null, null, $keyword);
+				$config['base_url'] = base_url().'dashboard/submission/page/';
+				$config['total_rows'] = $this->data['total'];
+				$offset = $this->uri->segment(4) ? (($this->uri->segment(4)-1) * $config['per_page']) : 0;
+				$this->data['submission'] = $this->cms->get_all_submission_paging(null, null, $config['per_page'], $offset, $keyword);
+			}
+
+			if($param == 'issue'){
+				if($status !== null)
+					$this->data['submission'] = $this->cms->get_journal_issue($status);
+			}
+
+		}
+
+		if(in_array(4, $role)){
+			$section = $this->session->userdata('editor_section');
+			if($param == 'section'){
+				if(!empty($section))
+					$this->data['submission'] = $this->cms->get_submission_section($section);
+				else 
+					$this->data['submission'] = array();
+			}else{
+				if($status !== null)
+					$this->data['submission'] = $this->cms->get_submission_section($section, $status);
+			}
+		}
+		*/
+
+		$this->pagination->initialize($config);
+		$this->data['paging'] = $this->pagination->create_links();
+		$this->load->view('template', $this->data);
+	}
+
+	public function users(){
+		$role = $this->session->userdata('role');
+		if(empty($role)) redirect('login');
+		$this->allow_access(array(1,2));
+		$this->data['title'] = 'Enrolled Users';
+		$this->data['page'] = 'page/users';
+
+		$tot = $this->cms->count_all_user();
+		$this->data['msg'] = 'Total : <b>'.number_format($tot).'</b>';
+		$this->load->library('pagination');
+		$config = array(
+			'base_url'		 => base_url().'dashboard/users/page/',
+			'total_rows'	 => $tot,
+			'per_page'		 => 25,
+			'full_tag_open'	 => '<div class="pull-right"><ul class="pagination pagination-sm">',
+			'full_tag_close' => '</ul></div>',
+			'cur_tag_open'	 => '<li class="active"><a href="#">',
+			'cur_tag_close' => '</a></li>',
+			'num_tag_open'	=> '<li>',
+			'num_tag_close'	=> '</li>',
+			'prev_tag_open' => '<li class="prev">',
+			'prev_tag_close' => '</li>',
+			'next_tag_open' => '<li class="next">',
+			'next_tag_close' => '</li>',
+			'prev_link'		=> '<i class="fa fa-chevron-left"></i>',
+			'next_link'		=> '<i class="fa fa-chevron-right"></i>',
+			'first_tag_open'	=> '<li>',
+			'first_tag_close'	=> '</li>',
+			'first_link'	=> '&laquo; First',
+			'last_link'	=> 'Last &raquo; ',
+			'last_tag_open'	=> '<li>',
+			'last_tag_close'	=> '</li>',			
+			'use_page_numbers' => TRUE,
+		);
+		$offset = $this->uri->segment(4)? (($this->uri->segment(4)-1) * $config['per_page']) : 0;
+		$this->pagination->initialize($config);
+		$this->data['paging'] = $this->pagination->create_links();		
+		$this->data['users'] = $this->cms->get_all_user_paging($config['per_page'], $offset);
+		$this->load->view('template', $this->data);
+	}
+
+	public function review($id, $param = ''){
+		$role = $this->session->userdata('role');
+		if(empty($role)) redirect('login');
+		$email = $this->session->userdata('email');
+		$this->data['sub'] = $this->cms->current_submission($id);
+		$this->data['page'] = 'page/review_list';
+		if($id == "archive" || $id == "active"){
+			$this->data['sts'] = $id;
+			$this->data['submission_review'] = $this->cms->get_journal_review_user($email, $id);
+		}else{
+			$this->data['page'] = 'page/review';
+			if($this->lib_view->check_valid_reviewer($id))
+				if($this->data['sub'][0]['sub_status'] == 3){
+					$this->log_submission($id, 4, '');
+					$this->cms->update('submission', array('sub_id', $id), array('sub_status' => 4));
+				}
+
+			$this->data['review'] = $this->cms->current_review($param);
+			if($param == 'online' || $param == null)
+				$this->data['review'] = $this->cms->get_review_item($id, $this->data['sub'][0]['round'], $email);
+
+	        $this->data['pdf'] = $this->cms->get_manuscript_file_type($id, $this->data['sub'][0]['round'], 2);
+	        $this->data['letter'] = $this->cms->get_manuscript_file_type($id, $this->data['sub'][0]['round'], 4);
+			$this->data['title'] = isset($this->data['sub'][0]['sub_title'])? $this->data['sub'][0]['sub_title']:'Detail Submission';
+			
+		}
+		$this->load->view('template', $this->data);
+	}
+
+	public function invitation($sub_id, $sr_id, $status){
+		$reviewer = $this->cms->get_current_reviewer($sr_id);
+		$sub = $this->cms->current_submission($sub_id);
+		$is_active = $this->cms->check_review_active($sub_id);
+		if($is_active){
+			if($status == 1){
+				# insert submission review 
+				$srdata = array(
+					'sub_id' => $sub_id,
+					'reviewer_email' => $reviewer[0]['email'],
+					'round'	=> $sub[0]['round'],
+				);
+				$ins = false;
+				$check = $this->cms->check_existing_review_form($sub_id, $sub[0]['round'], $reviewer[0]['email']);			
+				if($check == 0){
+					$ins = $this->cms->insert('submission_review', $srdata);
+				}
+				if($ins){				
+					# update submission reviewer status
+					$upd = $this->cms->update('submission_reviewer', array('sr_id', $sr_id), array('status'=> 1 ));
+					if($upd){
+						# confirm reminder and set new reminder invitation
+						$this->load->model('Mdl_reminder','reminder');
+						$this->reminder->cofirm_reminder($sub_id, $reviewer[0]['email'], 2);
+						$set_reminder = array(
+							'sub_id' => $sub_id,
+							'type'	=> 3,
+							'date_set'	=> date('Y-m-d H:i:s'),
+							'date_remind'	=> date('Y-m-d H:i:s', strtotime('+'.DAY_TO_REVIEW_MANUSCRIPT.' days')),
+							'email_destination'	=> $reviewer[0]['email']
+						);
+						$this->cms->insert('reminder', $set_reminder);	
+
+						# update submission status list
+						$check = $this->cms->check_count_reviewer_approve($sub_id);
+						if($check > 1){
+							$this->log_submission($sub_id, 4, 'Review Started');
+							$this->cms->update('submission', array('sub_id', $sub_id), array('sub_status' => 4));
+						}
+						# check account if exists or not					
+						$check = $this->cms->check_user_email($reviewer[0]['email']);
+						$pass = mt_rand(000000,999999);
+						$usermail = explode('@', $reviewer[0]['email']);						
+						$userdata = array(
+							'user_id' => $usermail[0].mt_rand(00,99),
+							'email'	=> $reviewer[0]['email'],
+							'salutation'	=> $reviewer[0]['salutation'],
+							'first_name' => $reviewer[0]['fullname'],
+							'password'	=> md5($pass),
+							'expertise'	=> $reviewer[0]['expertise'],
+							'affiliation'	=> $reviewer[0]['affiliation'],
+							'status'	=> 1,
+							'section_id'	=> $sub[0]['section_id'],
+							'date_create'	=> date('Y-m-d H:i:s'),
+							'date_update'	=> date('Y-m-d H:i:s'),
+						);
+						if($check < 1){
+							# if not, create new					
+							$insert = $this->cms->insert('users', $userdata);
+							if($insert){
+								$this->cms->insert('roleuser', array('user_id'=> $userdata['user_id'], 'role_id' => 6));
+								$this->cms->insert('roleuser', array('user_id'=> $userdata['user_id'], 'role_id' => 5));
+								$result = array(
+									'from'	=> 'invitation',
+									'user_id'	=> $userdata['user_id'],
+									'password'	=> $pass,
+									'name'		=> $userdata['salutation'].' '.$userdata['first_name'].' '.$userdata['last_name'],
+									'status'	=> array('reviewer'),
+								);
+								$message = $this->load->view('template/mailer/author/account_created', $result, TRUE);
+								$this->load->library('email'); // load email library
+								$this->email->from(MAILSYSTEM, 'IJTech');
+								$this->email->to($userdata['email']);
+								$this->email->bcc(BCC_MAILSYSTEM_MULTI, 2); 
+								$this->email->subject('[IJTech]: Account created');
+								$this->email->message($message);
+								if($this->email->send()){
+									$this->session->set_flashdata('message','<b>Thanks for your feedback,</b> Registration process successfully. We just send you an email containing your account to login into application.  Please open your email inbox now if you don\'t find it, maybe it in spam.<br/>Please login into application to start review article.');
+								}else{
+									$this->session->set_flashdata('message','<b>Warning!</b> We could not send your account to your email. Please contact administrator.');
+								}
+							}						
+						}else{
+							$this->session->set_flashdata('message','<b>Thanks for your feedback,</b> Please login into application to start review manuscript.');				
+						}
+						# send review assigment
+						$sub = $this->cms->current_submission($sub_id);
+						$editor = $this->cms->get_section_editor($sub[0]['section_id']);
+						$journal_id = ($sub[0]['round'] > 1 ? 'R'.($sub[0]['round']-1).'-':'').$sub[0]['section_abv'].'-'.$sub[0]['sub_id'];
+						$mailer = array(
+							'journal_id' => $journal_id,
+							'editor'	=> $editor,
+							'journal'	=> $sub,
+							'reviewer'	=> $this->cms->get_user_from_mail($reviewer[0]['email']),
+						);
+						$message = $this->load->view('template/mailer/reviewer/review_assigment', $mailer, TRUE);
+						$this->load->library('email'); // load email library
+						$this->email->from(MAILSYSTEM, 'IJTech');
+						$this->email->to($userdata['email']);
+						$this->email->bcc(BCC_MAILSYSTEM_MULTI, 2); 
+						$this->email->subject('[IJTech]:  Review assignment for manuscript #'.$journal_id);
+						$this->email->message($message);
+						$this->email->send();
+					}
+				}
+				$this->session->set_flashdata('message','You have accepted this invitation, Please login into application to start your review.');
+				redirect('login');
+			}else{
+				# update submission reviewer status
+				$upd = $this->cms->update('submission_reviewer', array('sr_id', $sr_id), array('status'=> 3 ));
+				if($upd){
+					$this->load->model('Mdl_reminder','reminder');
+					$this->reminder->update_reminder($sub_id, $reviewer[0]['email'], $status);
+					$this->session->set_flashdata('message','<b>Thank you</b> for responding to the review invitation on International Journal of Technology.');
+				}
+				redirect('login');
+			}
+		}else{
+			# manuscript out of review process
+			// $upd = $this->cms->update('submission_reviewer', array('sr_id', $sr_id), array('status'=> 3 ));
+			// if($upd)
+			redirect('home/review/'.$sub_id);
+		}
+	}
+
+
+	/**
+	 * inpress process manuscript 
+	 * reformat acepted manuscript 
+	 */
+	public function process($id, $step = ''){
+		$role = $this->session->userdata('role');
+		if(empty($role)) redirect('login');
+		$this->allow_access(array(1,2));
+		$this->data['task'] = 'inpress';
+		$this->data['step'] = $step !== '' ? $step : 'article';
+		$sub = $this->cms->get_current_journal($id);
+		if(empty($sub))
+			$sub = $this->cms->current_submission($id);
+
+		
+		$this->data['back'] = $this->navprocess($id, $step, 'back');
+		$this->data['sub'] = $sub;
+		$this->data['suplement'] = $this->cms->get_submission_file($id, $this->data['sub'][0]['round']);
+		$this->data['author'] = $this->cms->get_author_submission($id);
+		$this->data['title'] = isset($this->data['sub'][0]['sub_title']) ? $this->data['sub'][0]['sub_title']:'Detail Submission';
+		for($x=1; $x <= $this->data['sub'][0]['round']; $x++){
+			$this->data['preview'][$x] = $this->cms->get_manuscript_file_type($id, $x, 0);
+			$this->data['images'][$x] = $this->cms->get_manuscript_file_type($id, $x, 3);
+			$this->data['cover'][$x] = $this->cms->get_manuscript_file_type($id, $x, 5);
+			$this->data['letter'][$x] = $this->cms->get_manuscript_file_type($id, $x, 4);
+			$this->data['doc'][$x] = $this->cms->get_manuscript_file_type($id, $x, 1);
+            $this->data['pdf'][$x] = $this->cms->get_manuscript_file_type($id, $x, 2);
+        }
+        $this->data['section'] = $this->cms->get_all_section();
+		$this->data['issue'] = $this->cms->get_all_issue();		
+		$this->data['page'] = 'page/inpress';
+		$this->load->view('template', $this->data);
+	}
+
+	private function navprocess($id, $step, $condition){
+		$url = site_url().'dashboard/process/'.$id.'/';
+		if($condition == 'back'){
+			switch($step){
+				case "article": $url ='#'; break;
+				case "introduction": $url .='article'; break;
+				case "experimental": $url .='introduction'; break;
+				case "result": $url .='experimental'; break;
+				case "conclusion": $url .='result'; break;
+				case "acknowledgement": $url .='conclusion'; break;
+				case "references": $url .='acknowledgement'; break;
+				case "file": $url .='references'; break;
+				case "publish": $url .='file'; break;
+			}
+			return $url;
+		}else{
+			switch($step){
+				case "article": $url ='introduction'; break;
+				case "introduction": $url .='experimental'; break;
+				case "experimental": $url .='result'; break;
+				case "result": $url .='conclusion'; break;
+				case "conclusion": $url .='acknowledgement'; break;
+				case "acknowledgement": $url .='references'; break;
+				case "references": $url .='file'; break;
+				case "file": $url .='publish'; break;
+				case "publish": $url ='#'; break;
+			}
+			return $url;
+		}
+	}
+
+	# string returns
+	private function get_author($sub_id){
+		$res = array();
+    	$data = $this->cms->get_author_submission($sub_id);
+    	if(!empty($data)){
+    		foreach($data as $a){
+    			array_push($res, $a['first_name'].' '.$a['last_name']);
+    		}
+    	}
+    	return implode (', ', $res);
+	}
+
+	# json returns 
+	public function get_submission_json($sub_id){
+		if (IS_AJAX){
+			$role = $this->session->userdata('role');
+			if(empty($role)) redirect('login');
+			$data = $this->cms->current_submission($sub_id);
+			header("Content-type: application/json");
+			echo json_encode($data);
+		}
+	}
+
+	# json returns 
+	public function get_submission_status_json($userid, $sts){
+		if (IS_AJAX){
+			$role = $this->session->userdata('role');
+			if(empty($role)) redirect('login');
+			$data = $this->cms->get_submission_status_by_user($userid, $sts);
+			if(!empty($data)){
+				for ($a=0; $a < count($data); $a++){
+					$data[$a]['authors'] = $this->get_author($data[$a]['sub_id']);
+				}
+			}
+			header("Content-type: application/json");
+			echo json_encode($data);
+		}
+	}
+	
+	# json returns 
+	public function get_author_by_email_address_json(){	
+		if(IS_AJAX){	
+			$role = $this->session->userdata('role');
+			if(empty($role)) redirect('login');
+			$email = $this->input->post('email');
+			$data = $this->cms->get_role_by_email_address($email, 5);
+			header("Content-type: application/json");
+			echo json_encode($data);
+		}
+	}
+
+	# json returns 
+	public function get_reviewer_by_email_address_json(){
+		if(IS_AJAX){
+			$role = $this->session->userdata('role');
+			if(empty($role)) redirect('login');
+			$email = $this->input->post('email');
+			$data = $this->cms->get_role_by_email_address($email, 6);
+			header("Content-type: application/json");
+			echo json_encode($data);
+		}
+	}
+
+	public function get_reviewer_by_keywords_json(){
+		if(IS_AJAX){
+			$role = $this->session->userdata('role');
+			if(empty($role)) redirect('login');
+			$key = $this->input->post('key');
+			$data = $this->cms->get_role_by_keywords($key, 6);
+			header("Content-type: application/json");
+			echo json_encode($data);
+		}
+	}
+	
+	public function get_reviewer_by_keywords_html(){
+		if(IS_AJAX){
+			$role = $this->session->userdata('role');
+			if(empty($role)) redirect('login');
+			$key = $this->input->post('key');
+			$sub_id = $this->input->post('sub_id');
+			$data = $this->cms->get_suggested_reviewer($key);
+			$res = '<table class="table table-bordered data-table-reviewer">';
+			$res .= '<thead><tr><th>No</th><th>Reviewer</th><th>Expertise</th><th></th></tr></thead><tbody>';
+			if(!empty($data)){ $no=0; foreach ($data as $r) { $no++;
+				$fullname = $r['salutation'].' '.$r['fullname'];
+				$res .= '<tr bgcolor="'.($no % 2 == 0 ? '#FFFFFF':'').'"><td>'.$no.'</td><td>'.$fullname.'<br/><i><i class="fa fa-envelope-o"></i> '.$r['email'].'</i><br/>'.$r['affiliation'].'</td><td>'.($r['expertise'] == ''? '---':$r['expertise']).'</td><td><a href="'.site_url().'dashboard/save_selected_reviewer/'.$sub_id.'/'.$r['sr_id'].'" class="btn btn-sm btn-primary"><i class="fa fa-hand-o-left"></i></a></td></tr>';
+			}}
+			$res .= '</tbody></table>';
+			echo $res;
+		}
+	}
+
+	public function save_selected_reviewer($sub_id, $sr_id){
+		$page = 'dashboard/detail/submission/'.$sub_id;
+    	$reviewer = $this->cms->get_current_reviewer($sr_id);
+    	$data = array(
+    		'sub_id' => $sub_id,
+    		'user_id' => $this->session->userdata('user_id'),
+    		'salutation'	=> $reviewer[0]['salutation'],
+    		'fullname'	=> $reviewer[0]['fullname'],
+    		'email'	=> $reviewer[0]['email'],
+    		'expertise'	=> $reviewer[0]['expertise'],
+    		'affiliation'	=> $reviewer[0]['affiliation'],
+    	);    	
+    	$act = $this->cms->insert('submission_reviewer', $data);
+    	if ($act){
+    		$this->log('Add existing reviewer with email : '.$reviewer[0]['email'].' to submission id : '.$sub_id, 'submission_reviewer', $sub_id);
+    		$this->session->set_flashdata('success','Succeessfully add reviewer from existing data');
+    	}
+    	redirect($page);
+	}
+
+	public function get_user_privilage($uid){
+		if(IS_AJAX){
+			$role = $this->session->userdata('role');
+			if(empty($role)) redirect('login');	
+			$roles = array(1 => "administrator", "secretariat","editor","section editor","author/reviewer");
+			$data = $this->cms->get_user_privilage($uid);		
+			$html = '<h4>Please Choose privilage.</h4><hr/>';		
+			$html .= '<input type="hidden" name="user_id" value="'.$uid.'">';
+			for($a=1; $a<=5; $a++){
+				$ck = in_array($a, $data) ? 'checked = checked':'';
+				$html .= '<label><input class="icheck" type="radio" name="role" value="'.$a.'" '.$ck.'> '.$roles[$a]."</label><br/>";
+			}
+			echo $html;
+		}
+
+	}
+
+	# untuk keperluan migrasi data
+	# ===================================================
+	public function migrate($id = '', $step = '', $aid=''){
+		$role = $this->session->userdata('role');
+		if(empty($role)) redirect('login');
+		$this->allow_access(array(1,2));
+		$sub = array();
+		$this->data['title'] = 'Migrate Journal';
+		$this->data['task'] = 'migrate';
+		$this->data['step'] = $step !== '' ? $step : 'article';
+		$this->data['section'] = $this->cms->get_all_section();
+		$this->data['issue'] = $this->cms->get_all_issue();
+		if($id != ''){
+			$sub = $this->cms->get_current_journal($id);
+			if(empty($sub))
+				$sub = $this->cms->current_submission($id);
+
+			$this->data['suplement'] = $this->cms->get_submission_file($id, $sub[0]['round']);
+			$this->data['authors'] = $this->cms->get_author_submission($id);
+			$this->data['title'] = isset($sub[0]['sub_title']) ? $sub[0]['sub_title']:'Detail Submission';
+			for($x=1; $x <= $sub[0]['round']; $x++){
+				$this->data['preview'][$x] = $this->cms->get_manuscript_file_type($id, $x, 0);
+				$this->data['images'][$x] = $this->cms->get_manuscript_file_type($id, $x, 3);
+				$this->data['cover'][$x] = $this->cms->get_manuscript_file_type($id, $x, 5);
+				$this->data['letter'][$x] = $this->cms->get_manuscript_file_type($id, $x, 4);
+				$this->data['doc'][$x] = $this->cms->get_manuscript_file_type($id, $x, 1);
+	            $this->data['pdf'][$x] = $this->cms->get_manuscript_file_type($id, $x, 2);
+	        }
+		}
+		if($aid != '')
+			$this->data['ca'] = $this->cms->get_current_author($aid);
+
+		$this->data['sub'] = $sub;
+		$this->data['countries'] = $this->cms->get_countries();
+		$this->data['page'] = 'page/inpress';
+		
+		$this->load->view('template', $this->data);		
+	}
+
+	# search paging
+	public function search($param){
+		switch($param){
+			case "users":{
+				$keyword = isset($_GET['search']) ? $_GET['search'] : '';
+				$filter = isset($_GET['filter']) ? $_GET['filter'] : 'first_name';
+				$this->data['keyword'] = $keyword;
+				$this->data['filter'] = ucwords(str_replace('_',' ', $filter));
+				$this->data['title'] = "Enrolled User";
+				$this->data['page'] = "page/users";
+				$tot = $this->cms->count_search_user($filter, $keyword);
+				$this->data['msg'] = 'Search Result : <b>'.$tot.'</b>';
+				$this->load->library('pagination');
+				$config = array(
+					'base_url'		 => base_url().'dashboard/search/user/page/',
+					'total_rows'	 => $tot,
+					'per_page'		 => 10,
+					'full_tag_open'	 => '<div class="pull-right"><ul class="pagination pagination-sm">',
+					'full_tag_close' => '</ul></div>',
+					'cur_tag_open'	 => '<li class="active"><a href="#">',
+					'cur_tag_close' => '</a></li>',
+					'num_tag_open'	=> '<li>',
+					'num_tag_close'	=> '</li>',
+					'prev_tag_open' => '<li class="prev">',
+					'prev_tag_close' => '</li>',
+					'next_tag_open' => '<li class="next">',
+					'next_tag_close' => '</li>',
+					'prev_link'		=> '<i class="fa fa-chevron-left"></i>',
+					'next_link'		=> '<i class="fa fa-chevron-right"></i>',
+					'first_link'	=> '',
+					'last_link'	=> '',
+					'use_page_numbers' => TRUE,
+				);
+				$offset = $this->uri->segment(5)? (($this->uri->segment(5)-1) * $config['per_page']) : 0;
+				$this->pagination->initialize($config);
+				$this->data['paging'] = $this->pagination->create_links();		
+				$this->data['users'] = $this->cms->get_search_user($filter, $keyword, $config['per_page'], $offset);
+				$this->load->view('template', $this->data);
+			} break;
+		}
+	}
+
+	# crossref
+	# =================================
+	public function generate($param){
+		switch($param){
+			case "crossref":{
+
+				$this->data['page'] = 'page/crossref';
+				$this->data['issue'] = $this->cms->get_all_issue();
+
+			} break;
+			default: redirect('dashboard');
+		}
+		
+		$this->load->view('template', $this->data);
+	}
+
+	public function json_manuscript($sub_id){
+		if (IS_AJAX){
+			$sub = $this->cms->current_submission($sub_id);
+			echo json_encode($sub);
+		}
+	}
+
+	# BACKUP DATABASE
+	public function backup($act = null){
+		if ($act !== null){
+			$file = date('Y-m-d_His').'_backup.gz';
+			$this->load->dbutil();
+			$prefs = array(
+		        'tables'        => array(),   					// Array of tables to backup.
+		        'ignore'        => array('log_activities'),     // List of tables to omit from the backup
+		        'format'        => 'gzip',                      // gzip, zip, txt
+		        'filename'      => 'mybackup.sql',              // File name - NEEDED ONLY WITH ZIP FILES
+		        'add_drop'      => TRUE,                        // Whether to add DROP TABLE statements to backup file
+		        'add_insert'    => TRUE,                        // Whether to add INSERT data to backup file
+		        'newline'       => "\n"                         // Newline character used in backup file
+			);
+			$backup = $this->dbutil->backup($prefs);
+			$this->load->helper('file');
+			write_file('/assets/journal.zip', $backup);
+			$this->load->helper('download');
+			force_download($file, $backup);
+		}else{
+			$this->data['page'] = 'page/backup';
+			$this->load->view('template', $this->data);
+		}		
+	}
+
+	# REMINDER SCHEDULER
+	public function reminder(){
+		$this->load->model('Mdl_reminder','reminder');
+		$this->data['title'] = "Queue Email Reminder";
+		$type = isset($_GET['type']) ? $_GET['type'] : 1;
+		$this->data['type'] = $type;
+		$this->data['reminder'] = $this->reminder->get_reminder($type);
+		$this->data['page'] = 'page/reminder';		
+		$this->load->view('template', $this->data);		
+	}
+
+	public function cek($sub_id, $mail = false){
+		print_r($this->cms->get_corresponding_author($sub_id, $mail));
+	}
+
+}

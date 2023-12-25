@@ -1,0 +1,18 @@
+<?php
+if ( ! defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class Exp extends CI_Controller {
+    public function __construct() {
+				header('Access-Control-Allow-Origin: *');
+				header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
+				header('Access-Control-Allow-Headers: X-Requested-With, content-type, X-Token, x-token');
+        parent::__construct();
+    }
+    public function index() {
+			die('[{"id":"629","title":"pelatihan JICA","start":"2020-01-25 08:00:00","end":"2020-01-25 16:00:00"},{"id":"629","title":"pelatihan JICA","start":"2020-01-27 08:00:00","end":"2020-01-30 16:00:00","allDay":true}]');
+		}
+		public function t(){
+			die(date('Y-m-d-H-i-s-w'));
+		}
+}

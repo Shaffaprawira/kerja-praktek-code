@@ -1,0 +1,432 @@
+<div class="content-wrapper">
+	<section class="content-header">
+		<h1>Dashboard <small>International Journal of Technology</small></h1>
+		<ol class="breadcrumb">
+			<li><a href="#"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+		</ol>
+	</section>
+
+	<section class="content">
+
+		<!-- DASHBOARD CONTENT ADMINISTRATOR -->
+		<?php if(in_array(11, $this->session->userdata('role'))){?>
+		<div class="box">
+			<div class="box-header with-border">
+				<h3 class="box-title"><i class="fa fa-globe"></i> Online Submission Journal</h3>
+				<div class="box-tools pull-right">
+					<button class="btn btn-box-tool" data-widget="collapse" data-toggle="tooltip" title="Collapse"><i class="fa fa-minus"></i></button>
+					<button class="btn btn-box-tool" data-widget="remove" data-toggle="tooltip" title="Remove"><i class="fa fa-times"></i></button>
+				</div>
+			</div>
+			<div class="box-body">
+				<div class="row">
+					
+					<div class="col-md-4 col-sm-6 col-xs-12">											
+						<div class="info-box">
+							<span class="info-box-icon bg-yellow"><i class="fa fa-newspaper-o"></i></span>
+							<div class="info-box-content">
+								<span class="info-box-text"><b><a href="<?php echo site_url().'dashboard/submission/secretariat/status/1/page/1';?>">New Submission</a></b></span>
+								<span class="info-box-heading"><i>Need to be checked and send to suggested reviewer.</i></span>
+								<span class="info-box-number"><?php echo number_format($new);?></span>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-md-4 col-sm-6 col-xs-12">
+						<div class="info-box">
+							<span class="info-box-icon bg-red"><i class="fa fa-book"></i></span>
+							<div class="info-box-content">
+								<span class="info-box-text"><b><a href="<?php echo site_url().'dashboard/submission/secretariat/status/5/page/1';?>">Review Received</a></b></span>
+								<span class="info-box-heading"><i>Review Received from reviewer(s). Send decision.</i></span>
+								<span class="info-box-number"><?php echo number_format($received);?></span>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-md-4 col-sm-6 col-xs-12">
+						<div class="info-box">
+							<span class="info-box-icon bg-green"><i class="fa fa-bookmark"></i></span>
+							<div class="info-box-content">
+								<span class="info-box-text"><b><a href="<?php echo site_url().'dashboard/submission/secretariat/status/completed/page/1';?>">Completed Manuscript</a></b></span>
+								<span class="info-box-heading"><i>Submission received, rejected, and published</i></span>
+								<span class="info-box-number"><?php echo number_format($completed);?></span>
+							</div>
+						</div>
+					</div>
+
+				</div>
+			</div>
+		</div>
+
+		<!-- DASHBOARD CONTENT SECRETARIAT -->
+		<?php }else if (in_array(1, $this->session->userdata('role')) || in_array(2, $this->session->userdata('role'))) {?>
+
+
+		<div class="box">
+			<div class="box-header with-border">
+				<h3 class="box-title"><i class="fa fa-globe"></i> Online Submission Journal</h3>
+				<div class="box-tools pull-right">
+					<button class="btn btn-box-tool" data-widget="collapse" data-toggle="tooltip" title="Collapse"><i class="fa fa-minus"></i></button>
+					<button class="btn btn-box-tool" data-widget="remove" data-toggle="tooltip" title="Remove"><i class="fa fa-times"></i></button>
+				</div>
+			</div>
+			<div class="box-body">
+				<div class="well">
+					<div class="row">
+						<div class="col-md-3 col-sm-6 col-xs-12">											
+							<div class="info-box">
+								<span class="info-box-icon bg-blue"><i class="fa fa-newspaper-o"></i></span>
+								<div class="info-box-content">
+									<span class="info-box-text"><b><a href="<?php echo site_url().'dashboard/submission/secretariat';?>">All</a></b></span>
+									<span class="info-box-heading"><i>All Submission</i></span>
+									<span class="info-box-number"><?php echo number_format($all);?></span>
+								</div>
+							</div>
+						</div>
+						
+						<div class="col-md-3 col-sm-6 col-xs-12">											
+							<div class="info-box">
+								<span class="info-box-icon bg-yellow"><i class="fa fa-newspaper-o"></i></span>
+								<div class="info-box-content">
+									<span class="info-box-text"><b><a href="<?php echo site_url().'dashboard/submission/secretariat/status/8';?>">Accepted</a></b></span>
+									<span class="info-box-heading"><i>Accepted Submission</i></span>
+									<span class="info-box-number"><?php echo number_format($accepted);?></span>
+								</div>
+							</div>
+						</div>
+
+						<div class="col-md-3 col-sm-6 col-xs-12">
+							<div class="info-box">
+								<span class="info-box-icon bg-red"><i class="fa fa-book"></i></span>
+								<div class="info-box-content">
+									<span class="info-box-text"><b><a href="<?php echo site_url().'dashboard/submission/secretariat/status/11';?>">In Press</a></b></span>
+									<span class="info-box-heading"><i>Submission in press</i></span>
+									<span class="info-box-number"><?php echo number_format(isset($inpress) ? $inpress : 0);?></span>
+								</div>
+							</div>
+						</div>
+
+						<div class="col-md-3 col-sm-6 col-xs-12">
+							<div class="info-box">
+								<span class="info-box-icon bg-green"><i class="fa fa-bookmark"></i></span>
+								<div class="info-box-content">
+									<span class="info-box-text"><b><a href="<?php echo site_url().'dashboard/submission/secretariat/status/9';?>">Published</a></b></span>
+									<span class="info-box-heading"><i>Published Submission </i></span>
+									<span class="info-box-number"><?php echo number_format($completed);?></span>
+								</div>
+							</div>
+						</div>
+					
+					</div>
+
+				</div>
+
+				<div class="row">
+					
+					<div class="col-lg-3 col-xs-6">
+						<div class="small-box bg-aqua">
+							<div class="inner">
+								<h3><?php echo number_format($alluser);?></h3>
+								<p>All Users</p>
+							</div>
+							<div class="icon">
+								<i class="fa fa-users"></i>
+							</div>
+						</div>
+					</div>
+					<!-- articles -->
+					<div class="col-lg-3 col-xs-6">
+						<div class="small-box bg-green">
+							<div class="inner">
+								<h3><?php echo number_format($section_editor);?></h3>
+								<p>Section Editor</p>
+							</div>
+							<div class="icon">
+								<i class="fa fa-pencil"></i>
+							</div>
+						</div>
+					</div>
+					<!-- quotes -->
+					<div class="col-lg-3 col-xs-6">
+						<div class="small-box bg-yellow">
+							<div class="inner">
+								<h3><?php echo number_format($author);?></h3>
+								<p>Authors</p>
+							</div>
+							<div class="icon">
+								<i class="fa fa-edit"></i>
+							</div>					
+						</div>
+					</div>
+
+					<!-- journal -->
+					<div class="col-lg-3 col-xs-6">
+						<div class="small-box bg-yellow">
+							<div class="inner">
+								<h3><?php echo number_format($reviewer);?></h3>
+								<p>Reviewers</p>
+							</div>
+							<div class="icon">
+								<i class="fa fa-search"></i>
+							</div>					
+						</div>
+					</div>
+
+				</div>
+				<!-- chart submission -->
+				<!-- <div class="row">
+
+					<div class="col-md-12">
+						
+						<div class="box box-primary">
+							<div class="box-header with-border">
+								<h3 class="box-title">Submission</h3>
+								<div class="box-tools pull-right">
+									<button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i></button>
+									<button type="button" class="btn btn-box-tool" data-widget="remove"><i class="fa fa-times"></i></button>
+								</div>
+							</div>
+							<div class="box-body">
+								<div class="chart">
+									<canvas id="areaChart" style="height:400px"></canvas>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div> -->
+				
+				<!-- last accepted and submitted manuscript -->
+				<div class="row">
+					<div class="col-md-6 col-lg-6 col-sm-12 col-xs-12">
+						
+						<div class="box box-info">
+							<div class="box-header with-border">
+								<h3 class="box-title"><i class="fa fa-newspaper-o"></i> Last Submitted Manuscript</h3>
+								<div class="box-tools pull-right">
+									<button class="btn btn-box-tool" data-widget="collapse" data-toggle="tooltip" title="Collapse"><i class="fa fa-minus"></i></button>
+									<button class="btn btn-box-tool" data-widget="remove" data-toggle="tooltip" title="Remove"><i class="fa fa-times"></i></button>
+								</div>
+							</div>
+							<div class="box-body">
+								<table class="table table-striped">
+									<tr>
+										<th>No.</th>
+										<th>Manuscript</th>										
+									</tr>
+									<?php if(!empty($last_submitted)){ $no=0; foreach ($last_submitted as $ls){ $no++;?>
+									<tr>
+										<td><?php echo $no;?></td>
+										<td>
+											<a href="<?php echo site_url().'dashboard/detail/submission/'.$ls['sub_id'];?>"><?php echo $ls['sub_title'];?></a>
+											<div class="small"><i class="fa fa-clock-o"></i> <?php echo date('d M Y - H:i', strtotime($ls['date_submit']));?></div>
+											<div class="small"><i class="fa fa-user"></i> <?php echo $this->lib_view->author_submission($ls['sub_id']);?></div>
+										</td>
+									</tr>
+									<?php }}else{?>
+									<tr><td colspan="3">No submitted manuscript...</td></tr>
+									<?php } ?>
+								</table>
+							</div>
+						</div>
+
+					</div>
+					<div class="col-md-6 col-lg-6 col-sm-12 col-xs-12">
+						
+						<div class="box box-success">
+							<div class="box-header with-border">
+								<h3 class="box-title"><i class="fa fa-newspaper-o"></i> Last Accepted Manuscript</h3>
+								<div class="box-tools pull-right">
+									<button class="btn btn-box-tool" data-widget="collapse" data-toggle="tooltip" title="Collapse"><i class="fa fa-minus"></i></button>
+									<button class="btn btn-box-tool" data-widget="remove" data-toggle="tooltip" title="Remove"><i class="fa fa-times"></i></button>
+								</div>
+							</div>
+							<div class="box-body">
+								<table class="table table-striped">
+									<tr>
+										<th>No.</th>
+										<th>Manuscript</th>										
+									</tr>
+									<?php if(!empty($last_accepted)){ $no=0; foreach ($last_accepted as $ls){ $no++;?>
+									<tr>
+										<td><?php echo $no;?></td>
+										<td>
+											<a href="<?php echo site_url().'dashboard/detail/submission/'.$ls['sub_id'];?>"><?php echo $ls['sub_title'];?></a>
+											<div class="small"><i class="fa fa-clock-o"></i> <?php echo date('d M Y - H:i', strtotime($ls['date_submit']));?></div>
+											<div class="small"><i class="fa fa-user"></i> <?php echo $this->lib_view->author_submission($ls['sub_id']);?></div>
+										</td>
+									</tr>
+									<?php }}else{?>
+									<tr><td colspan="3">No accepted manuscript...</td></tr>
+									<?php } ?>
+								</table>
+							</div>
+						</div>
+
+					</div>
+				</div>
+
+			</div>
+		</div>
+
+
+
+
+
+		<!-- DASHBOARD CONTENT USERS -->
+		<?php }else{?>
+		<div class="box">
+			<div class="box-header with-border">
+				<h3 class="box-title"><i class="fa fa-globe"></i> Online Submission Journal</h3>
+				<div class="box-tools pull-right">
+					<button class="btn btn-box-tool" data-widget="collapse" data-toggle="tooltip" title="Collapse"><i class="fa fa-minus"></i></button>
+					<button class="btn btn-box-tool" data-widget="remove" data-toggle="tooltip" title="Remove"><i class="fa fa-times"></i></button>
+				</div>
+			</div>
+			<div class="box-body">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="nav-tabs-custom">
+							<ul class="nav nav-tabs">
+								
+								<?php if(in_array(3, $this->session->userdata('role')) || in_array(4, $this->session->userdata('role'))){?>
+									<li class="active"><a href="#authoring" data-toggle="tab">My Editorial Activities</a></li>
+								<?php } ?>
+								<?php if(in_array(5, $this->session->userdata('role'))){?>
+									<li class="active"><a href="#authoring" data-toggle="tab">My Authoring Activities</a></li>
+									<?php if(in_array(6, $this->session->userdata('role'))){?>
+										<li><a href="#reviewing" data-toggle="tab">My Reviewing Assigments</a></li>
+									<?php } ?>
+								<?php } ?>
+								
+							</ul>
+							<div class="tab-content">
+								<div class="active tab-pane" id="authoring">
+									<div class="row">											
+										
+										<?php if(in_array(3, $this->session->userdata('role')) || in_array(4, $this->session->userdata('role'))){?>				
+
+										<div class="col-md-12">
+											<div class="col-md-4 col-sm-6 col-xs-12">											
+												<div class="info-box">
+													<span class="info-box-icon bg-yellow"><i class="fa fa-newspaper-o"></i></span>
+													<div class="info-box-content">
+														<span class="info-box-text"><b><a href="<?php echo site_url().'dashboard/submission/editor/status/1';?>">New Submission</a></b></span>
+														<span class="info-box-heading"><i>Need to be checked and send to suggested reviewer.</i></span>
+														<span class="info-box-number"><?php echo number_format($new);?></span>
+													</div>
+												</div>
+											</div>
+
+											<div class="col-md-4 col-sm-6 col-xs-12">
+												<div class="info-box">
+													<span class="info-box-icon bg-red"><i class="fa fa-book"></i></span>
+													<div class="info-box-content">
+														<span class="info-box-text"><b><a href="<?php echo site_url().'dashboard/submission/editor/status/5';?>">Review Received</a></b></span>
+														<span class="info-box-heading"><i>Review Received from reviewer(s). Send decision.</i></span>
+														<span class="info-box-number"><?php echo number_format($received);?></span>
+													</div>
+												</div>
+											</div>
+
+											<div class="col-md-4 col-sm-6 col-xs-12">
+												<div class="info-box">
+													<span class="info-box-icon bg-green"><i class="fa fa-bookmark"></i></span>
+													<div class="info-box-content">
+														<span class="info-box-text"><b><a href="<?php echo site_url().'dashboard/submission/editor/status/completed';?>">Completed Manuscript</a></b></span>
+														<span class="info-box-heading"><i>Submission received, rejected, and published</i></span>
+														<span class="info-box-number"><?php echo number_format($completed);?></span>
+													</div>
+												</div>
+											</div>
+
+										</div>
+											
+										<?php } ?>
+
+										<?php if(in_array(5, $this->session->userdata('role'))){?>
+											<div class="col-md-5">
+												<ul class="list" style="list-style: none">
+													<?php 
+														$uid = $this->session->userdata('user_id');
+														$status = [1,2,3,7,8,9,10];
+														$_process = ($this->lib_view->count_submission_by_user($uid, 3) + $this->lib_view->count_submission_by_user($uid, 4) + $this->lib_view->count_submission_by_user($uid, 5) + $this->lib_view->count_submission_by_user($uid, 6));
+														for ($a=0; $a < count($status); $a++){
+															if ($status[$a] == 3){ ?>
+
+																<li><b>( <?php echo $_process;?> ) </b><a href="#" onclick="return get_submission('<?php echo $uid.'#'.$status[$a].'#'.'Review Process';?>')"> Review Process </a></li>
+
+														<?php }else{ ?>
+																<li><b>( <?php echo $this->lib_view->count_submission_by_user($uid, $status[$a]);?> ) </b><a href="#" onclick="return get_submission('<?php echo $uid.'#'.$status[$a].'#'.submission_status($status[$a]);?>')"><?php echo submission_status($status[$a]);?></a></li>
+													<?php } } ?>
+												</ul>
+											</div>
+											<div class="col-md-6 ajax-content">
+												<div class="list-group">
+													<!-- dynamic ajax content -->
+													<a href="<?php echo site_url().'dashboard/create/submission';?>" class="btn btn-lg btn-default" style="padding:30px; margin:50px; border:dashed 1px #CCC; text-transform: uppercase; font-weight: bold; color:#AAA">Start New Submission</a>
+												</div>
+											</div>
+										<?php } ?>
+
+										<?php if(in_array(6, $this->session->userdata('role')) && count($this->session->userdata('role')) == 1){?>
+
+											<div class="col-md-4 col-sm-6 col-xs-12">
+												<div class="info-box">
+													<span class="info-box-icon bg-green"><i class="fa fa-search"></i></span>
+													<div class="info-box-content">
+														<span class="info-box-text"><b><a href="<?php echo site_url().'dashboard/review/active';?>">Active</a></b></span>
+														<span class="info-box-heading"><i>Active review's manuscript </i></span>
+														<span class="info-box-number"><?php echo number_format($review_active);?></span>
+													</div>
+												</div>
+											</div>
+
+											<div class="col-md-4 col-sm-6 col-xs-12">
+												<div class="info-box">
+													<span class="info-box-icon bg-red"><i class="fa fa-book"></i></span>
+													<div class="info-box-content">
+														<span class="info-box-text"><b><a href="<?php echo site_url().'dashboard/review/archive';?>">Archive</a></b></span>
+														<span class="info-box-heading"><i>Pass Review activities.</i></span>
+														<span class="info-box-number"><?php echo number_format($review_archive);?></span>
+													</div>
+												</div>
+											</div>
+
+										<?php } ?>
+									</div>
+								</div>
+								<div class="tab-pane" id="reviewing">
+									<table class="table table-striped data-table">
+									<thead>
+										<tr>
+											<th>ID</th>
+											<th>Assigned</th>
+											<th>Sec</th>
+											<th>Title</th>
+											<th>Review Result</th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody>
+										<?php if(!empty($submission_review)){ foreach ($submission_review as $sr){?>
+										<tr>
+											<td><?php echo $sr['sub_id'];?></td>
+											<td width="150"><?php echo date('d M Y - H:i', strtotime($sr['date_submit']));?></td>										
+											<td width="100"><?php echo $sr['round'] > 1 ? 'R'.($sr['round']-1).'-':'';?><?php echo $sr['section_abv'];?></td>
+											<td><a href="<?php echo site_url().'dashboard/review/'.$sr['sub_id'].'/'.$sr['review_id'];?>" data-tooltip="tooltip" title="Start Review"><?php echo $sr['sub_title'];?></a></td>
+											<td><?php echo review_result($sr['review_result']);?></td>
+											<td><a class="btn btn-primary btn-sm" href="<?php echo site_url().'dashboard/review/'.$sr['sub_id'].'/'.$sr['review_id'];?>" data-tooltip="tooltip" title="Start Review"><i class="fa fa-search"></i></a></td>
+										</tr>
+										<?php } } ?>
+									</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<?php }?>
+	</section>
+</div>

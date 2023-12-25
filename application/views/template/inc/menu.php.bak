@@ -1,0 +1,201 @@
+	<aside class="main-sidebar">
+		<section class="sidebar">
+			<div class="user-panel">
+				<div class="pull-left image">
+					<img class="img-circle" src="<?php echo set_image($this->session->userdata('avatar'));?>" alt="">
+				</div>
+				<div class="pull-right info">
+					<p><?php echo strlen($this->session->userdata('fname')) > 10 ? substr($this->session->userdata('fname'), 0, 10).'...' : $this->session->userdata('fname');?></p>
+					<p></p><i class="fa fa-circle text-success"></i> <?php echo $this->session->userdata('status')[0];?><p></p>
+				</div>
+			</div>
+			
+			<!-- search form (Optional) -->
+			<form action="#" method="get" class="sidebar-form">
+				<div class="input-group">
+					<input type="text" name="q" class="form-control" placeholder="Search...">
+					<span class="input-group-btn">
+						<button type="submit" name="search" id="search-btn" class="btn btn-flat"><i class="fa fa-search"></i></button>
+					</span>
+				</div>
+			</form>
+			
+			<!-- Sidebar Menu -->
+			<ul class="sidebar-menu">
+				<li class="header">MAIN MENU</li>
+				<li class="<?php echo $this->uri->segment(2) == '' && $this->uri->segment(1) == 'dashboard'? 'active':'';?>"><a href="<?php echo base_url().'dashboard';?>"><i class="fa fa-home"></i> <span>Dashboard</span></a></li>
+				
+				<!-- AMINISTRATOR/SECRETARIAT MENU -->
+				<?php if(in_array(1, $this->session->userdata('role')) || in_array(2, $this->session->userdata('role'))) {?>
+					<li class="treeview <?php echo ($this->uri->segment(2) == 'announcement'||$this->uri->segment(3) == 'announcement'|| $this->uri->segment(2) == 'section' || $this->uri->segment(3) == 'section' || $this->uri->segment(2) == 'people' || $this->uri->segment(3) == 'people' || $this->uri->segment(2) == 'about' || $this->uri->segment(3) == 'page') && ($this->uri->segment(2) != 'users') ? 'active':'';?>">
+						<a href="#"><i class="fa fa-globe"></i> <span>Site Management</span> <i class="fa fa-angle-left pull-right"></i></a>
+						<ul class="treeview-menu">
+							<li><a href="<?php echo base_url().'dashboard/announcement';?>"><i class="fa fa-arrow-circle-right"></i> Announcement</a></li>
+							<li><a href="<?php echo base_url().'dashboard/section';?>"><i class="fa fa-arrow-circle-right"></i> Journal Section</a></li>
+							<li><a href="<?php echo base_url().'dashboard/about';?>"><i class="fa fa-arrow-circle-right"></i> About the Journal</a></li>
+							<li><a href="<?php echo base_url().'dashboard/people';?>"><i class="fa fa-arrow-circle-right"></i> Editorial Team</a></li>
+						</ul>
+					</li>
+
+					<li class="treeview <?php echo $this->uri->segment(2) == 'users' || $this->uri->segment(3) == 'user' || $this->uri->segment(3) == 'users' ? 'active':'';?>">
+						<a href="#"><i class="fa fa-mortar-board"></i> <span>User Management</span> <i class="fa fa-angle-left pull-right"></i></a>
+						<ul class="treeview-menu">
+							<li><a href="<?php echo base_url().'dashboard/users';?>"><i class="fa fa-arrow-circle-right"></i> Enrolled Users</a></li>
+							<li><a href="<?php echo base_url().'dashboard/create/user';?>"><i class="fa fa-arrow-circle-right"></i> Register New User</a></li>
+						</ul>
+					</li>
+					
+					<li class="treeview <?php echo $this->uri->segment(2) == 'submission' || (in_array($this->uri->segment(3), array('submission','suplement','author','reviewer','agreement')) && $this->uri->segment(2) == 'submission') || ($this->uri->segment(2) == 'detail' && $this->uri->segment(3) == 'submission') ? 'active':'';?>">
+						<a href="#"><i class="fa fa-newspaper-o"></i> <span>Submissions</span> <i class="fa fa-angle-left pull-right"></i></a>
+						<ul class="treeview-menu">							
+							<li class="<?php echo $this->uri->segment(5) == 1 ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/submission/secretariat/status/1/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Screening by eic <small class="label pull-right label-info"><?php echo $this->lib_view->count_submission_status(1);?></small></a></li>
+							<li class="<?php echo $this->uri->segment(5) == 2 ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/submission/secretariat/status/2/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Screening by secret <small class="label pull-right bg-blue"><?php echo $this->lib_view->count_submission_status(2);?></small></a></li>
+							<li class="<?php echo $this->uri->segment(5) == 3 ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/submission/secretariat/status/3/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Review Assignment <small class="label pull-right bg-yellow"><?php echo $this->lib_view->count_submission_status(3);?></small></a></li>
+							<li class="<?php echo $this->uri->segment(5) == 4 ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/submission/secretariat/status/4/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Review Process <small class="label pull-right bg-green"><?php echo $this->lib_view->count_submission_status(4);?></small></a></li>
+							<li class="<?php echo $this->uri->segment(5) == 5 ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/submission/secretariat/status/5/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Review Received <small class="label pull-right bg-yellow"><?php echo $this->lib_view->count_submission_status(5);?></small></a></li>							
+							<li class="<?php echo $this->uri->segment(5) == 7 ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/submission/secretariat/status/7/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Revision Process <small class="label pull-right bg-yellow"><?php echo $this->lib_view->count_submission_status(7);?></small></a></li>
+							<li class="<?php echo $this->uri->segment(5) == 8 ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/submission/secretariat/status/8/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Accepted <small class="label pull-right bg-green"><?php echo $this->lib_view->count_submission_status(8);?></small></a></li>
+							<li class="<?php echo $this->uri->segment(5) == 12 ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/submission/secretariat/status/12/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Inline Editing <small class="label pull-right label-info"><?php echo $this->lib_view->count_submission_status(12);?></small></a></li>
+							<li class="<?php echo $this->uri->segment(5) == 11 ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/submission/secretariat/status/11/page/1';?>"><i class="fa fa-arrow-circle-right"></i> In Press <small class="label pull-right bg-blue"><?php echo $this->lib_view->count_submission_status(11);?></small></a></li>
+							<li class="<?php echo $this->uri->segment(5) == 'completed' ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/submission/secretariat/status/completed/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Archive <small class="label pull-right bg-red"><?php echo $this->lib_view->count_submission_status('completed');?></small></a></li>
+						</ul>
+					</li>
+					
+					<li class="treeview <?php echo $this->uri->segment(2) == 'issue'|| $this->uri->segment(3) == 'issue' && $this->uri->segment(2) != 'submission' ? 'active':'';?>">
+						<a href="#"><i class="fa fa-book"></i> <span>Issue Management</span> <i class="fa fa-angle-left pull-right"></i></a>
+						<ul class="treeview-menu">
+							<li><a href="<?php echo base_url().'dashboard/issue';?>"><i class="fa fa-arrow-circle-right"></i> All Issue</a></li>
+							<li><a href="<?php echo base_url().'dashboard/create/issue';?>"><i class="fa fa-arrow-circle-right"></i> Create Issue</a></li>
+						</ul>
+					</li>
+					
+					<li class="<?php echo $this->uri->segment(2) == 'generate' && $this->uri->segment(1) == 'dashboard'? 'active':'';?>"><a href="<?php echo base_url().'dashboard/generate/crossref';?>"><i class="fa fa-file-code-o"></i> <span>Generate Crossref</span></a></li>
+
+					<li class="<?php echo $this->uri->segment(2) == 'migrate' && $this->uri->segment(1) == 'dashboard'? 'active':'';?>"><a href="<?php echo base_url().'dashboard/migrate';?>"><i class="fa fa-upload"></i> <span>Migrate Journal</span></a></li>
+
+					<li class="treeview <?php echo in_array($this->uri->segment(2), array('export')) ? 'active':'';?>">
+						<a href="#"><i class="fa fa-desktop"></i> <span>Export</span> <i class="fa fa-angle-left pull-right"></i></a>
+						<ul class="treeview-menu">
+							<li class="<?php echo $this->uri->segment(2) == '' ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/export';?>"><i class="fa fa-arrow-circle-right"></i> Manuscript </a></li>							
+							<li class="<?php echo $this->uri->segment(2) == 'reviewer' ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/export/reviewer';?>"><i class="fa fa-arrow-circle-right"></i> Reviewer </a></li>							
+						</ul>
+					</li>
+					
+					<li class="treeview <?php echo in_array($this->uri->segment(2), array('backup','reminder')) ? 'active':'';?>">
+						<a href="#"><i class="fa fa-cogs"></i> <span>Admintools</span> <i class="fa fa-angle-left pull-right"></i></a>
+						<ul class="treeview-menu">
+							<li class="<?php echo $this->uri->segment(2) == 'backup' ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/backup';?>"><i class="fa fa-arrow-circle-right"></i> Backup Database </a></li>							
+							<li class="<?php echo $this->uri->segment(2) == 'reminder' ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/reminder';?>"><i class="fa fa-arrow-circle-right"></i> Schedule Reminder </a></li>							
+						</ul>
+					</li>
+
+				<!-- EDITOR -->
+				<?php }else if(in_array(3, $this->session->userdata('role'))){ ?>
+						<li class="treeview <?php echo $this->uri->segment(2) == 'submission' || in_array($this->uri->segment(3), array('submission','suplement','author','reviewer','agreement')) ? 'active':'';?>">
+							<a href="#"><i class="fa fa-newspaper-o"></i> <span>Editor</span> <i class="fa fa-angle-left pull-right"></i></a>
+							<ul class="treeview-menu">								
+								
+								<li class="<?php echo $this->uri->segment(5) == 1 ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/submission/editor/status/1/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Screening by eic <small class="label pull-right label-info"><?php echo $this->lib_view->count_submission_status(1);?></small></a></li>
+								<li class="<?php echo $this->uri->segment(5) == 2 ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/submission/editor/status/2/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Screening by secret <small class="label pull-right bg-blue"><?php echo $this->lib_view->count_submission_status(2);?></small></a></li>
+
+								<li class="<?php echo $this->uri->segment(5) == 3 ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/submission/editor/status/3/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Review Assignment <small class="label pull-right bg-blue"><?php echo $this->lib_view->count_submission_status(3);?></small></a></li>
+								<li class="<?php echo $this->uri->segment(5) == 4 ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/submission/editor/status/4/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Review Process <small class="label pull-right bg-blue"><?php echo $this->lib_view->count_submission_status(4);?></small></a></li>
+								<li class="<?php echo $this->uri->segment(5) == 5 ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/submission/editor/status/5/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Review Received <small class="label pull-right bg-blue"><?php echo $this->lib_view->count_submission_status(5);?></small></a></li>
+								<li class="<?php echo $this->uri->segment(5) == 7 ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/submission/editor/status/7/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Revision Process <small class="label pull-right bg-orange"><?php echo $this->lib_view->count_submission_status(7);?></small></a></li>
+								<li class="<?php echo $this->uri->segment(5) == 8 ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/submission/editor/status/8/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Accepted <small class="label pull-right bg-green"><?php echo $this->lib_view->count_submission_status(8);?></small></a></li>
+								<li class="<?php echo $this->uri->segment(5) == 'completed' ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/submission/editor/status/completed/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Archive <small class="label pull-right bg-blue"><?php echo $this->lib_view->count_submission_status('completed');?></small></a></li>					
+							</ul>
+						</li>
+						<li class="<?php echo $this->uri->segment(3) == 'editorial' ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/create/editorial';?>"><i class="fa fa-book"></i> <span>Create Editorial</span></a></li>
+
+				<?php }else{?>
+					
+					<?php if(in_array(5, $this->session->userdata('role'))){?>
+						<li class="treeview <?php echo $this->uri->segment(2) == 'submission' || in_array($this->uri->segment(3), array('submission','suplement','author','reviewer','agreement','detail')) ? 'active':'';?>">
+							<a href="#"><i class="fa fa-newspaper-o"></i> <span>Author</span> <i class="fa fa-angle-left pull-right"></i></a>
+							<ul class="treeview-menu">
+								<li class="<?php echo $this->uri->segment(5) == 'active'?'active':'';?>"><a href="<?php echo base_url().'dashboard/submission/author/status/active';?>"><i class="fa fa-arrow-circle-right"></i> Active</a></li>
+								<li class="<?php echo $this->uri->segment(5) == 'archive'?'active':'';?>"><a href="<?php echo base_url().'dashboard/submission/author/status/archive';?>"><i class="fa fa-arrow-circle-right"></i> Archive</a></li>
+								<li class="<?php echo in_array($this->uri->segment(2), array('create','edit')) ? 'active':'';?>"><a href="<?php echo base_url().'dashboard/create/submission';?>"><i class="fa fa-arrow-circle-right"></i> Start New Submission</a></li>
+							</ul>
+						</li>
+					<?php } ?>
+
+					<?php if(in_array(4, $this->session->userdata('role'))){ $section = $this->session->userdata('editor_section'); ?>
+						<li class="treeview <?php echo $this->uri->segment(2) == 'submission' || in_array($this->uri->segment(3), array('submission','suplement','author','reviewer','agreement')) ? 'active':'';?>">
+							<a href="#"><i class="fa fa-newspaper-o"></i> <span>Section Editor</span> <i class="fa fa-angle-left pull-right"></i></a>
+							<ul class="treeview-menu">								
+								<li class="<?php echo $this->uri->segment(5) == 1 ? 'active':'';?>">
+									<a href="<?php echo base_url().'dashboard/submission/editor/status/1/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Screening by eic 
+										<small class="label pull-right label-info"><?php echo $this->lib_view->count_submission_section($section, 1);?></small>
+									</a>
+								</li>
+								<li class="<?php echo $this->uri->segment(5) == 2 ? 'active':'';?>">
+									<a href="<?php echo base_url().'dashboard/submission/editor/status/2/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Screening by secret 
+										<small class="label pull-right bg-blue"><?php echo $this->lib_view->count_submission_section($section, 2);?></small>
+									</a>
+								</li>
+								<li class="<?php echo $this->uri->segment(5) == 3 ? 'active':'';?>">
+									<a href="<?php echo base_url().'dashboard/submission/editor/status/3/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Review Assignment
+										<small class="label pull-right label-warning"><?php echo $this->lib_view->count_submission_section($section, 3);?></small>
+									</a>
+								</li>
+								<li class="<?php echo $this->uri->segment(5) == 4 ? 'active':'';?>">
+									<a href="<?php echo base_url().'dashboard/submission/editor/status/4/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Review Process
+										<small class="label pull-right bg-green"><?php echo $this->lib_view->count_submission_section($section, 4);?></small>
+									</a>
+								</li>
+								<li class="<?php echo $this->uri->segment(5) == 5 ? 'active':'';?>">
+									<a href="<?php echo base_url().'dashboard/submission/editor/status/5/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Review Received
+										<small class="label pull-right bg-orange"><?php echo $this->lib_view->count_submission_section($section, 5);?></small>
+									</a>
+								</li>
+								<li class="<?php echo $this->uri->segment(5) == 7 ? 'active':'';?>">
+									<a href="<?php echo base_url().'dashboard/submission/editor/status/7/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Revision Process
+										<small class="label pull-right label-warning"><?php echo $this->lib_view->count_submission_section($section, 7);?></small>
+									</a>
+								</li>
+								<li class="<?php echo $this->uri->segment(5) == 'completed' ? 'active':'';?>">
+									<a href="<?php echo base_url().'dashboard/submission/editor/status/completed/page/1';?>"><i class="fa fa-arrow-circle-right"></i> Archive
+										<small class="label pull-right bg-red"><?php echo $this->lib_view->count_submission_section($section, 'completed');?></small>
+									</a>
+								</li>					
+							</ul>
+						</li>
+					<?php } ?>
+
+					<?php if(in_array(6, $this->session->userdata('role'))){?>
+						<li class="treeview <?php echo $this->uri->segment(2) == 'review' ? 'active':'';?>">
+							<a href="#"><i class="fa fa-search"></i> <span>Reviewer</span> <i class="fa fa-angle-left pull-right"></i></a>
+							<ul class="treeview-menu">
+								<li class="<?php echo $this->uri->segment(3) == 'active' || $this->uri->segment(4) !== '' ?'active':'';?>"><a href="<?php echo base_url().'dashboard/review/active';?>"><i class="fa fa-arrow-circle-right"></i> Active</a></li>
+								<li class="<?php echo $this->uri->segment(3) == 'archive'?'active':'';?>"><a href="<?php echo base_url().'dashboard/review/archive';?>"><i class="fa fa-arrow-circle-right"></i> Archive</a></li>
+							</ul>
+						</li>
+					<?php } ?>								
+				<?php } ?>
+			</ul>
+			<?php if(in_array(5, $this->session->userdata('role'))){?>
+			<hr/>
+			<div class="link">
+				<ul>
+					<!-- <li><a style="color:#337ab7" href="<?php echo site_url().'about/4/author-guidelines';?>" target="_blank">How to submit Manuscript</a></li>
+					<li><a style="color:#337ab7" href="<?php echo site_url().'about/10/policy';?>" target="_blank">Information for Reviewer</a></li>
+					<li><a style="color:#337ab7" href="<?php echo site_url().'about/4/author-guidelines';?>" target="_blank">Ethical Guidelines & Plagiarism Screening</a></li>
+					<li><a style="color:#337ab7" href="<?php echo site_url().'about/4/author-guidelines';?>" target="_blank">Copyright/Journal Publishing Agreement</a></li>
+					<li><a style="color:#337ab7" href="<?php echo site_url().'about/4/author-guidelines';?>" target="_blank">Permission & Credit Lines</a></li>
+					<li><a style="color:#337ab7" href="<?php echo site_url().'about/6/open-access-policy';?>" target="_blank">Open Access Policy</a></li> -->
+					
+					<li><a style="color:#337ab7" href="<?php echo site_url().'about/4/author-guidelines';?>" target="_blank">Author Guidelines</a></li>
+					<li><a style="color:#337ab7" href="<?php echo site_url().'about/5/focus-and-scope';?>" target="_blank">Focus and Scope</a></li>
+					<li><a style="color:#337ab7" href="<?php echo site_url().'about/3/online-submission';?>" target="_blank">Online Submissions</a></li>
+					<li><a style="color:#337ab7" href="<?php echo site_url().'about/11/publication-policy';?>" target="_blank">Publication Policy</a></li>
+					<li><a style="color:#337ab7" href="<?php echo site_url().'about/10/policy';?>" target="_blank">Publication Ethics and Policy</a></li>
+
+				</ul>
+			</div>
+			<?php } ?>
+			
+        </section>
+	</aside>
+	

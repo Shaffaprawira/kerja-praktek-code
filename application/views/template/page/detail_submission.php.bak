@@ -1,0 +1,841 @@
+<!-- i need get screen width for good -->
+<script type="text/javascript">
+	var x = window.screen.width;
+	var y = window.screen.height;	
+</script>
+<div class="content-wrapper">
+	<section class="content-header">
+		<h1>Detail Submission</h1>
+		<ol class="breadcrumb">
+			<li><a href="<?php echo base_url().'dashboard';?>"><i class="fa fa-dashboard"></i> Home</a></li>
+			<li><a href="<?php echo base_url().'dashboard/submission';?>">Submission</a></li>
+			<li class="active"><?php echo strlen($title) > 50 ? ucwords(substr($title, 0 ,50)).'...': ucwords($title);?></li>
+		</ol>
+	</section>
+	<section class="content usetooltip"> 
+		<div class="row">
+			<div class="col-md-12">
+				<div class="box box-default">
+					<div class="box-header with-border">
+						<h3 class="box-title"><i class="fa fa-newspaper-o"></i> &nbsp; Detail Submission <?php echo $sub[0]['round'] > 1 ? '<span class="badge alert-danger">R'.($sub[0]['round']-1).'</span>':'';?></h3>
+					</div>
+					<div class="box-body">
+						<div class="col-md-7">
+							<div class="form-group">
+								<label>Author(s):</label>
+								<p><?php echo $this->lib_view->author_submission_full($sub[0]['sub_id']);?></p>
+							</div>
+							<div class="form-group">
+								<label>Title:</label>
+								<p><?php echo $sub[0]['sub_title'];?></p>
+							</div>
+							<div class="form-group">
+								<label>Abstract:</label>
+								<p><?php echo $sub[0]['abstract'];?></p>
+							</div>
+							<div class="form-group">
+								<label>Keywords:</label>
+								<p><?php echo $sub[0]['keywords'];?></p>
+							</div>
+							<div class="btn btn-default btn-references btn-block"><i class="fa fa-file-text-o"></i> View References</div><br/>
+							<div class="form-group references" style="display: none">
+								<label>References:</label>
+								<p><?php echo $sub[0]['sub_references'];?></p>
+							</div>
+
+							<?php if (in_array(1, $this->session->userdata('role')) || in_array(2, $this->session->userdata('role')) || in_array(3, $this->session->userdata('role')) || in_array(4, $this->session->userdata('role'))){?>
+								<div class="form-group">
+									<label>Editor in Charge :</label>
+									<div class="list-group">
+									<?php 
+										$editor = $this->lib_view->get_section_editor($sub[0]['section_id']);
+										if(!empty($editor)){
+											foreach ($editor as $e){												
+												if($this->session->userdata('email') == $e['email'])
+													echo "<a href='#'>- ".$e['salutation'].' '.$e['first_name'].' '.$e['last_name']."</a>";
+												else 												
+													echo '- '.$e['salutation'].' '.$e['first_name'].' '.$e['last_name'];
+												echo "<br/>";
+											}
+										}
+									?>	
+									</div>
+								</div>
+
+								<?php if (in_array(1, $this->session->userdata('role')) || in_array(2, $this->session->userdata('role')) || in_array(3, $this->session->userdata('role')) || in_array(4, $this->session->userdata('role'))){
+								
+									# checing wharever submission status == 2 and never given decission type 1 (Decision after screeing)
+									# ===================================================================================================
+									$check_enable_screening = $this->lib_view->check_enable_screening($sub[0]['sub_id']);
+									if(in_array($sub[0]['sub_status'], array(1,2)) && $check_enable_screening){?>	
+									<hr/>
+									
+									<?php if($sub[0]['sub_status'] == 1){?>
+
+										<h3 class="heading">Screening by <small>(Editor in Charge)</small></h3>
+										<small></small>						
+										<form action="<?php echo site_url().'dashboard/update/screening';?>" method="POST" enctype="multipart/form-data">
+											<input type="hidden" name="sub_id" value="<?php echo $sub[0]['sub_id'];?>">
+											<input type="hidden" name="round" value="<?php echo $sub[0]['round'];?>">
+											<input type="hidden" name="author" value="<?php echo $sub[0]['user_id'];?>">
+											<input type="hidden" name="page" value="<?php echo current_url();?>">
+											<div class="form-group">
+												<label>Decision from EiC <span>*</span></label>
+												<select name="status" class="form-control decision_eic" required>
+													<option value="">- Select Decision -</option>
+													<option value="1">Accepted : Proceed to Secretariat</option>
+													<option value="2">Revise : Send back to Author</option>
+													<option value="3">Reject : Completed Submission</option>
+												</select>
+											</div>
+
+											<div class="form-group">
+												<label>Section  </label> <input type="checkbox" name="c_section" id="c_section"> Change Section
+												<select name="section_id" class="form-control" id="s_section" disabled>
+													<?php if(!empty($section)){ foreach ($section as $s) {?>
+														<option value="<?php echo $s['section_id'];?>" <?php echo $sub[0]['section_id'] == $s['section_id'] ? 'selected':'';?>><?php echo $s['section_title'];?></option>
+													<?php }} ?>
+												</select>
+											</div>
+											
+											<div class="form-group" id="notes_for_secretariat" style="display: none">
+												<label>Notes for Secretariat</label>
+												<div class="note">Please enter message/note for secretariat about this submission.</div>
+												<textarea class="form-control" name="notes_for_secretariat" rows="3" placeholder="Notes for secretariat"></textarea>
+											</div>
+
+											<div class="form-group" id="decision_eic" style="display:none">
+												<label>Reason(s)</label><br/>
+												<label><input type="checkbox" name="r1" value="Poor english"> Poor English </label><br/>
+												<label><input type="checkbox" name="r2" value="High Similarity/Plagiarism Rate"> High Similarity/Plagiarism Rate  </label><br/>
+												<label><input type="checkbox" name="r3" value="Unsuitable Format"> Unsuitable Format </label><br/>
+												<label><input type="checkbox" name="r4" value="Unreadable text, figure, or table"> Unreadable text, figure, or table </label><br/>
+												<label><input type="checkbox" name="r5" value="Unsuitable theme"> Unsuitable theme </label><br/>
+												<label><input type="checkbox" name="r6" value="Out of date reference"> Out of date reference </label><br/>
+												<label><input type="checkbox" name="r7" value="Lack of significant contribution or novelty"> Lack of significant contribution or novelty </label><br/> <?php //ruki ?>
+												<label style="font-style:italic; font-weight:normal">other reasons (leave it blank otherwise):</label>
+												<textarea name="other" class="form-control" placeholder="Other reason"></textarea><hr/>
+												<label>Revision in days</label>
+												<div class="note">For default revision days (<?php echo DAY_REVISE_SCREENING;?> days after this notify was sent to the author(s))</div>
+												<input type="number" name="revise_days" min="1" max="30" class="form-control" placeholder="Please revise manuscript in this days">
+												
+												<br/>
+												<label>Attachment</label>
+												<div class="note">Please select pdf file format to attach file</div>
+												<input type="file" name="userfile" class="btn btn-default">
+											</div>										
+											<div class="form-action">
+												<input type="submit" name="submit" class="btn btn-primary" value="Save">
+											</div>											
+										</form>										
+									
+									<?php }else if($sub[0]['sub_status'] == 2 && (!empty($last_screening) && $last_screening[0]['eic'] == 0)){?>
+										
+										<h3 class="heading">Initial Screening <small>(Secretariat)</small></h3><small>Tasks: check plagiarism, theme, formatting, readability, ensure no author info</small>									
+										<form action="<?php echo site_url().'dashboard/update/screening';?>" method="POST" enctype="multipart/form-data">
+											<input type="hidden" name="screening_id" value="<?php echo $last_screening[0]['screening_id'];?>">
+											<input type="hidden" name="from_eic" value="1">
+											
+											<input type="hidden" name="sub_id" value="<?php echo $sub[0]['sub_id'];?>">
+											<input type="hidden" name="round" value="<?php echo $sub[0]['round'];?>">
+											<input type="hidden" name="author" value="<?php echo $sub[0]['user_id'];?>">
+											<input type="hidden" name="page" value="<?php echo current_url();?>">
+											<div class="form-group">
+												<label>Similarity Rate (%)</label>
+												<input type="number" name="similarity_rate" step="any" min="0" max="100" placeholder="Please enter Similarity rate" class="form-control">
+											</div>											
+											<div class="form-group">
+												<label>Decision <span>*</span></label>
+												<select name="status" class="form-control decision" required>
+													<option value="">- Select Decision -</option>
+													<option value="1">Accepted : Proceed to review process</option>
+													<option value="2">Revise : Send back to Author</option>
+													<option value="3">Reject : Completed Submission</option>
+												</select>
+											</div>
+											<div class="form-group">
+												<label>Section  </label> <input type="checkbox" name="c_section" id="c_section"> Change Section
+												<select name="section_id" class="form-control" id="s_section" disabled>
+													<?php if(!empty($section)){ foreach ($section as $s) {?>
+														<option value="<?php echo $s['section_id'];?>" <?php echo $sub[0]['section_id'] == $s['section_id'] ? 'selected':'';?>><?php echo $s['section_title'];?></option>
+													<?php }} ?>
+												</select>
+											</div>
+											<div class="form-group" id="decision" style="display:none">
+												<label>Reason(s)</label><br/>
+												<label><input type="checkbox" name="r1" value="Poor english"> Poor English </label><br/>
+												<label><input type="checkbox" name="r2" value="High Similarity/Plagiarism Rate"> High Similarity/Plagiarism Rate  </label><br/>
+												<label><input type="checkbox" name="r3" value="Unsuitable Format"> Unsuitable Format </label><br/>
+												<label><input type="checkbox" name="r4" value="Unreadable text, figure, or table"> Unreadable text, figure, or table </label><br/>
+												<label><input type="checkbox" name="r5" value="Unsuitable theme"> Unsuitable theme </label><br/>
+												<label><input type="checkbox" name="r6" value="Out of date reference"> Out of date reference </label><br/>
+												<label style="font-style:italic; font-weight:normal">other reasons (leave it blank otherwise):</label>
+												<textarea name="other" class="form-control" placeholder="Other reason"></textarea><hr/>
+												<label>Revision in days</label>
+												<div class="note">For default revision days (<?php echo DAY_REVISE_SCREENING;?> days after this notify was sent to the author(s))</div>
+												<input type="number" name="revise_days" min="1" max="30" class="form-control" placeholder="Please revise manuscript in this days">
+												<br/>
+												<label>Attachment</label>
+												<div class="note">Please select pdf file format to attach file</div>
+												<input type="file" name="userfile" class="btn btn-default">
+											</div>										
+											<div class="form-action">
+												<input type="submit" name="submit" class="btn btn-primary" value="Save">
+											</div>
+										</form>
+
+									<?php } ?>
+									<?php } ?>
+								<?php } ?>
+
+								<!-- editor section suggested reviewer list -->
+								<?php if(!empty($this->session->userdata('editor_section')) || ($this->lib_view->show_suggest_reviewer($sub[0]['sub_id']) == 0 &&
+										(in_array(1, $this->session->userdata('role')) || in_array(2, $this->session->userdata('role')) && $sub[0]['sub_status'] < 2))  ){?>
+								<hr/>
+								<div class="form-group">
+									<h4>Reviewers</h4>
+									<table class="table table-striped">
+										<tr>
+											<th>No.</th>
+											<th>Reviewer</th>										
+											<th>Expertise</th>
+										</tr>
+										<?php $reviewer = $this->lib_view->get_reviewers($sub[0]['sub_id']);
+											if(!empty($reviewer)){ $no=0; foreach ($reviewer as $r){ $no++ ?>
+											<tr>
+												<td><?php echo $no;?>.</td>
+												<td>
+													<?php echo $r['salutation'].' '.$r['fullname'];?><br/>
+													<i><?php echo $r['email'];?></i>
+													<div><?php echo $r['affiliation'];?></div>
+                          <?php if($r['user_id'] == $sub[0]['user_id']){echo '<div class="badge label-error">suggested by author</div>';} //ruki ?>
+												</td>
+												<td><?php echo $r['expertise'];?></td>
+											</tr>
+										<?php }} ?>
+									</table>
+								</div>
+								<?php } ?>
+								
+								<!-- Appoinment Reviewers -->
+								<?php if (($this->lib_view->show_suggest_reviewer($sub[0]['sub_id']) > 0) && ($sub[0]['sub_status'] > 2 && $sub[0]['sub_status'] < 7)) {?>
+									<hr/>
+									<div class="form-group">
+										<h3>Reviewers</h3> <!-- ruki -->
+										<table class="table table-striped">
+											<tr>
+												<th>No.</th>
+												<th>Reviewer</th>										
+												<th>Expertise</th>
+												<th width="100"></th>
+											</tr>
+											<?php $reviewer = $this->lib_view->get_reviewers($sub[0]['sub_id']);
+												if(!empty($reviewer)){ $no=0; foreach ($reviewer as $r){ $no++ ?>
+												<tr>
+													<td><?php echo $no;?>.</td>
+													<td>
+														<?php echo $r['salutation'].' '.$r['fullname'];?><br/>
+														<a href="mailto:<?php echo $r['email'];?>"><?php echo $r['email'];?></a>
+														<div><small><?php echo $r['affiliation'];?></small></div>
+                            <?php if($r['user_id'] == $sub[0]['user_id']){echo '<div class="badge label-error">suggested by author</div>';} //ruki ?>
+													</td>
+													<td><?php echo $r['expertise'];?></td>
+													<td>
+														<?php if ($r['status'] == 0){ ?>
+														<span class="btn-group">
+															<a data-tooltip="tooltip" title="Agree" class="btn btn-success btn-sm" data-toggle="modal" data-target="#modalReviewer" href="#" onclick="return set_reviewer('<?php echo $r['sub_id'].'#'.$r['sr_id'].'#'.'2';?>')"><i class="fa fa-check-circle"></i></a>
+															<a data-tooltip="tooltip" title="Disagree" class="btn btn-default btn-sm" data-toggle="modal" data-target="#modalReviewer" href="#" onclick="return set_reviewer('<?php echo $r['sub_id'].'#'.$r['sr_id'].'#'.'3';?>')"><i class="fa fa-times-circle"></i></a>
+														</span>
+														<?php }else{
+															echo reviewer_decision_label($r['status']);
+														} ?>
+													</td>
+												</tr>
+											<?php }} ?>
+										</table>
+										<a href="#" class="btn btn-primary" data-toggle="modal" data-target="#modalNewReviewer">Add a candidate* reviewer</a> <!-- ruki -->
+                    <br><span><small>*) A candidate reviewer will become a <em>real</em> reviewer after he/she accept the invitation to review this paper.</small></span>
+									</div>
+								<?php } ?>
+							<?php } ?>
+
+							<!-- publish button -->						
+							<!-- <?php 
+								if(in_array(1, $this->session->userdata('role')) || in_array(2, $this->session->userdata('role'))){
+									if($sub[0]['sub_status'] == 8){?>
+										<div class="btn btn-success btn-block" data-toggle="modal" data-target="#modalPublish"><i class="fa fa-book"></i> Publish Manuscript</div>
+									<?php } ?>
+							<?php } ?> -->
+
+							<!-- button author revise if submission status = 7 -->
+							<?php 
+								if(in_array(5, $this->session->userdata('role')) && !in_array($sub[0]['sub_status'], array(8,9,10))){ 
+								$check_enable_confirm_revise = $this->lib_view->check_enable_confirm_revise($sub[0]['sub_id']);								
+								if ($check_enable_confirm_revise){?>
+								<a href="#" data-toggle="modal" data-target="#revise-agreement" class="btn btn-info" onclick="return revise_agreement('<?php echo $sub[0]['sub_id'].'#'.$sub[0]['round'];?>')"><i class="fa fa-warning"></i> Continue Revise</a>
+							<?php }else{
+								if($sub[0]['sub_status'] == 7){?>
+								<a href="<?php echo site_url().'dashboard/edit/submission/'.$sub[0]['sub_id'];?>" class="btn btn-warning"><i class="fa fa-edit"></i> Edit Submission</a>
+							<?php }}} ?>
+						</div>
+
+						<!-- Sidebar  -->
+						<div class="col-md-5 sidebar-content">
+
+							<div class="panel">
+								<div class="box-header" style="border-top:solid 1px #DDD; background-color: #EEE">
+									<h5 class="box-titles"><i class="fa fa-info-circle"></i> Manuscript Activity</h5>
+
+									<div class="box-tools pull-right">
+										<div class="btn-group">
+											<button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+												<i class="fa fa-chevron-circle-down"></i></button>
+											<ul class="dropdown-menu" role="menu">
+												<li><a href="#" onclick="return show_review('<?php echo $sub[0]['sub_id'].'#'.$sub[0]['round'];?>')" data-toggle="modal" data-target="#modalReviewHistory"><i class="fa fa-clock-o"></i> Review History</a></li>
+											</ul>
+										</div>										
+									</div>
+								</div>
+								<div class="box-body">
+
+									<div class="form-group">
+										<label>Submitted Date:</label>
+										<p><?php echo $sub[0]['date_submit'] == '0000-00-00 00:00:00' ? '-----': ($this->lib_view->first_submit_date($sub[0]['sub_id']) ? date('d M Y - H:i', strtotime($this->lib_view->first_submit_date($sub[0]['sub_id']))) : 'Data migration');?></p>
+									</div>
+
+									<div class="form-group">
+										<label>Submitted By:</label>
+										<p><?php echo $this->lib_view->get_user_submit($sub[0]['user_id']);?></p>
+									</div>
+							
+									<div class="form-group">								
+										<?php for($x=1; $x <= $sub[0]['round']; $x++){?>
+											<div class="row">
+												<div class="col-md-10">
+
+													<?php if(!empty($doc[$x])){?>
+													<label>Manuscript <?php echo $doc[$x][0]['round'] > 1 ? '(R'.($doc[$x][0]['round']-1).')' :'';?></label>
+													<p>
+														<a href="<?php echo base_url().$doc[$x][0]['file_url'];?>" target="_blank">
+														<?php $filename = explode('/', $doc[$x][0]['file_url']);
+														echo "<i class='glyphicon glyphicon-save-file'></i> Manuscript DOC/DOCX";
+														?></a><br/>
+													</p>
+													<?php } ?>
+
+													<?php if(!empty($pdf[$x])){?>
+													<p>
+														<a href="#" onclick="window.open('<?php echo base_url().$pdf[$x][0]['file_url'];?>', 'Manuscript PDF', 'width=600, height=800'); return false;">
+														<?php $filename = explode('/', $pdf[$x][0]['file_url']);
+														echo "<i class='glyphicon glyphicon-save-file'></i> Manuscript PDF";
+														?></a><br/>
+													</p>
+													<?php } ?>
+
+
+													<?php if(!empty($preview[$x])){?>
+													<p>
+														<a href="#" onclick="window.open('<?php echo base_url().$preview[$x][0]['file_url'];?>', 'Graphical Abstract', 'width=400, height=200, left='+(x-400)/2+', top='+(y-200)/2); return false;">
+														<?php $filename = explode('/', $preview[$x][0]['file_url']);
+														echo "<i class='glyphicon glyphicon-save-file'></i> Graphical Abstract - Images";
+														?></a><br/>
+													</p>
+													<?php } ?>
+
+													
+													<p>
+														<a href="#" onclick="window.open('<?php echo base_url().'dashboard/cover_letter/'.$sub[0]['sub_id'].'/'.$x;?>', 'Cover Letter', 'width=600, height=800'); return false;">
+														<i class='glyphicon glyphicon-save-file'></i> Cover Letter
+														</a><br/>										
+													</p>
+													
+
+													<?php if($sub[0]['round'] > 1){?>
+														<?php if(!empty($letter[$x])){?>
+														<p>
+															<a href="#" onclick="window.open('<?php echo base_url().$letter[$x][0]['file_url'];?>', 'Response Letter', 'width=600, height=800'); return false;">
+															<?php $filename = explode('/', $letter[$x][0]['file_url']);
+															echo "<i class='glyphicon glyphicon-save-file'></i> Response Letter";
+															?></a><br/>
+														</p>
+														<?php } ?>
+													<?php } ?>
+													
+													<?php if(!empty($images[$x])){ for($a=0; $a < count($images[$x]); $a++){?>
+													<p>
+														<a href="#" onclick="window.open('<?php echo base_url().$images[$x][$a]['file_url'];?>', 'Supplentary File', 'width=600, height=700, left='+(x-600)/2+', top='+(y-700)/2); return false;">
+														<?php $filename = explode('/', $images[$x][$a]['file_url']);
+														echo "<i class='glyphicon glyphicon-save-file'></i> Supplentary File (".($a+1).")";
+														?></a><br/>
+													</p>
+													<?php }} ?>
+												</div>
+												<div class="col-md-2">
+													<!-- <button class="btn btn-xs btn-primary pull-right" data-toggle="modal" data-target="#view_review_result" data-tooltip="tooltip" title="Notes from reviewer(s)" onclick="return view_review_result('<?php echo $x.'#'.$sub[0]['sub_id'];?>')"><i class="fa fa-search"></i></button> -->
+												</div>
+											</div>
+										<?php } ?>
+									</div>							
+							
+									<hr/>
+									<div class="form-group">
+										<label>Status:</label>
+										<?php if(in_array(5, $this->session->userdata('role'))){?>
+										<p class="callout callout-default"><?php $this->lib_view->log_submission_status($sub[0]['sub_id'], $sub[0]['round']);?></p>
+										<?php }else{?>
+										<?php $this->lib_view->log_submission_status($sub[0]['sub_id'], $sub[0]['round']);?>
+										<?php } ?>
+									</div>
+									<?php 
+									$screenings = $this->lib_view->submission_screening($sub[0]['sub_id']);
+									if (!empty($screenings)){?>							
+									<table class="table table-striped">
+										<?php if(in_array(5, $this->session->userdata('role')) || in_array(6, $this->session->userdata('role'))){ ?> 
+										<?php $no=0; foreach ($screenings as $sc){ $no++; 
+											if($sc['type'] > 0){
+												$r = $sc['round'] > 1 ? '(R'.($sc['round']-1).')':'';
+										?>
+										<tr>
+											<td>
+												<label><a href="<?php echo site_url().'dashboard/messages/'.$sc['screening_id'];?>" data-toggle="modal" data-target="#screening-mail" onclick=""><?php echo $sc['type'] == 0 ? 'Initial Screening':'Decision '.$r;?></a></label><br/>
+												Date : <?php echo date('d M Y - H:i', strtotime($sc['date_input']));?><br/>
+												<?php if($sc['type'] == 0){?>
+												Similarity Rate : <?php echo $sc['similarity_rate'].'%';?><br/>
+												<?php } ?>
+												Decision : <?php echo decision_status($sc['status'], ($sc['type'] == 0 ? ($sc['eic'] == 1 ? 1 : 0) : 2));?><br/>
+
+												<?php if(!in_array(5, $this->session->userdata('role')) && !in_array(6, $this->session->userdata('role'))){?>
+														Decided by : <?php echo $this->lib_view->get_user_submit($sc['user_id']);?><br/>
+												<?php } ?>
+												
+												Notes : <?php echo $sc['reason_back'] == '' ? '-': $sc['reason_back'];?><br/>
+											</td>
+										</tr>
+										<?php  }} ?>
+										<?php }else{?>
+											<?php $no=0; foreach ($screenings as $sc){ $no++; 
+												$r = $sc['round'] > 1 ? '(R'.($sc['round']-1).')':'';
+												?>
+											<tr>
+												<td>
+													<label><a href="<?php echo site_url().'dashboard/messages/'.$sc['screening_id'];?>" data-toggle="modal" data-target="#screening-mail" onclick=""><?php echo $sc['type'] == 0 ? 'Initial Screening':'Decision '.$r;?></a></label><br/>
+													Date : <?php echo date('d M Y - H:i', strtotime($sc['date_input']));?><br/>
+													<?php if($sc['type'] == 0){?>
+													Similarity Rate : <?php echo $sc['similarity_rate'].'%';?><br/>
+													<?php } ?>
+													Decision : <?php echo decision_status($sc['status'], ($sc['type'] == 0 ? ($sc['eic'] == 1 ? 1 : 0) : 2));?><br/>
+													
+													<?php if(!in_array(5, $this->session->userdata('role')) && !in_array(6, $this->session->userdata('role'))){?>
+														Decided by : <?php echo $this->lib_view->get_user_submit($sc['user_id']);?><br/>
+													<?php } ?>
+
+													Notes : <?php echo $sc['reason_back'] == '' ? '-': $sc['reason_back'];?><br/>
+													Notes from Eic : <?php echo $sc['notes_from_eic'] == '' ? '-': $sc['notes_from_eic'];?><br/>
+												</td>
+											</tr>
+										<?php }} ?>
+									</table>
+									<?php } ?>
+									<?php if($sub[0]['date_withdraw'] != NULL && $sub[0]['date_withdraw'] != '0000-00-00 00:00:00'){ ?>
+										<div class="form-group" style="border-top: solid 1px #DDD; padding-top: 20px">											
+											<label>Withdraw</label><br/>
+											<div>
+												Date : <?php echo date('d M Y - H:i', strtotime($sub[0]['date_withdraw']));?><br/>
+												Reason : <?php echo !empty($sub[0]['withdraw_reason']) ? $sub[0]['withdraw_reason'] : '-----';?>
+											</div>
+										</div>
+									<?php } ?>
+
+
+									<!-- review result -->
+									<?php if((count($review_result) > 0 && $sub[0]['sub_status'] == 5) && (!in_array(5, $this->session->userdata('role')) && !in_array(6, $this->session->userdata('role')))){?>								
+										<div class="btn btn-default btn-block" data-toggle="modal" data-target="#modalReviewResult"><i class="fa fa-search"></i> Review Result</div>
+										<div class="btn btn-primary btn-block" data-toggle="modal" data-target="#decision">Decision</div>
+									
+									<?php } ?>
+
+									<!-- review result -->
+									<?php if($sub[0]['sub_status'] > 0 && $sub[0]['sub_status'] < 3 && !empty($letter[$sub[0]['round']]) && !in_array(5, $this->session->userdata('role')) && !in_array(6, $this->session->userdata('role'))){?>								
+										<div class="btn btn-primary btn-block" data-toggle="modal" data-target="#modalSendLetter"><i class="fa fa-search"></i> Send to Reviewer(s)</div>
+									<?php } ?>
+								</div>
+							</div>							
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		
+	</section>
+</div>
+
+<!-- modal publish -->
+<div class="modal inmodal" id="modalPublish" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content animated bounceInDown">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+				<span aria-hidden="true"><i class="fa fa-times"></i></span><span class="sr-only">Close</span></button>
+				<i class="fa fa-book modal-icon icon"></i>
+				<h4 class="modal-title set-header">Publish Manuscript</h4>
+				<div class="set-header-label">Rearrangement of submission manuscript to web journal format.</div>
+			</div>
+			<form name="formpublish" action="<?php echo base_url().'dashboard/insert/publish ';?>" method="POST">
+			<div class="modal-body">
+				<input type="hidden" name="sub_id" id="sub_id_publish">
+				<input type="hidden" name="page" value="<?php echo current_url();?>">
+				<div class="msg">					
+					<div class="form-group">
+						<label>Manuscript Title :</label>
+						<p id="manuscript_title"></p>
+					</div>				
+				</div>
+			</div>
+			<div class="modal-footer">
+				<input type="reset" name="reset" value="Cancel" class="btn btn-white" data-dismiss="modal">
+				<input type="submit" name="move" value="OK" class="btn btn-success action">
+			</div>
+			</form>
+		</div>	
+	</div>
+</div>
+
+<!-- modal response letter -->
+<div class="modal inmodal" id="modalSendLetter" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content animated bounceInDown">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+				<span aria-hidden="true"><i class="fa fa-times"></i></span><span class="sr-only">Close</span></button>
+				<i class="fa fa-envelope modal-icon icon"></i>
+				<h4 class="modal-title set-header">Send Response Letter</h4>
+				<div class="set-header-label">Send manuscript and response letter to related reviewer(s)</div>
+			</div>
+			<form name="formreviewer" action="<?php echo base_url().'dashboard/insert/send_response_letter ';?>" method="POST">
+			<div class="modal-body">
+				<input type="hidden" name="sub_id" value="<?php echo $sub[0]['sub_id'];?>">
+				<input type="hidden" name="round" value="<?php echo $sub[0]['round'];?>">
+				<input type="hidden" name="author" value="<?php echo $sub[0]['user_id'];?>">
+				<input type="hidden" name="page" value="<?php echo current_url();?>">
+				<div class="msg">					
+					<table class="table table-striped">
+						<tr>
+							<th>Files</th>							
+							<th>Date</th>
+						</tr>
+						<?php if(!empty($suplement)){ foreach ($suplement as $s){ 
+								if(in_array($s['type'], array(4,2))){
+							?>
+						<tr>
+							<td>
+								<div><a href="<?php echo site_url().$s['file_url'];?>"><?php echo manuscript_type($s['type']);?></a> </div>
+								<div><?php echo $s['file_description'];?></div>												
+							</td>							
+							<td><?php echo date('d M Y - H:i', strtotime($s['date_input']));?></td>										
+						</tr>										
+						<?php }}}else{
+							echo "<tr><td colspan='3' class='text-warning'><i class='fa fa-warning'></i> No files uploaded.</td></tr>";
+						} ?>
+					</table>					
+				</div>
+				<div class="form-group">
+					<label>Select Reviewer <small>(Optional)</small></label>
+					<div class="note">Let it be empty to send response letter to all reviewers</div>
+					<select name="sr_id[]" class="form-control select" style="width:100%" multiple>
+						<?php 
+							$_rev = $this->lib_view->get_reviewers($sub[0]['sub_id'], 1);
+							if(!empty($_rev)){ foreach ($_rev as $r) { ?>
+								<option value="<?php echo $r['sr_id'];?>"><?php echo $r['salutation'].' '.$r['fullname'];?></option>
+						<?php }} ?>
+					</select>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<input type="reset" name="reset" value="Cancel" class="btn btn-white" data-dismiss="modal">
+				<input type="submit" name="move" value="Send" class="btn btn-info action">
+			</div>
+			</form>
+		</div>	
+	</div>
+</div>
+
+<!-- modal set reviewer -->
+<div class="modal inmodal" id="modalReviewer" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content animated bounceInDown">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+				<span aria-hidden="true"><i class="fa fa-times"></i></span><span class="sr-only">Close</span></button>
+				<i class="fa fa-user-plus modal-icon icon"></i>
+				<h4 class="modal-title set-header">Add a candidate reviewer</h4>
+				<div class="set-header-label">Don't forget to send invitation after clicking "Add" below.</div> <!-- ruki -->
+			</div>
+			<form name="formreviewer" action="<?php echo base_url().'dashboard/update/reviewer_status ';?>" method="POST">
+			<div class="modal-body">
+				<input type="hidden" name="sub_id" id="item_id">
+				<input type="hidden" name="sr_id" id="reviewer">
+				<input type="hidden" name="status" id="status">
+				<div class="msg"></div>
+			</div>
+			<div class="modal-footer">
+				<input type="reset" name="reset" value="Cancel" class="btn btn-white" data-dismiss="modal">
+				<input type="submit" name="move" value="Send Email" class="btn btn-info action">
+			</div>
+			</form>
+		</div>	
+	</div>
+</div>
+
+<!-- modal set reviewer -->
+<div class="modal inmodal" id="modalReviewResult" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content animated bounceInDown">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+				<span aria-hidden="true"><i class="fa fa-times"></i></span><span class="sr-only">Close</span></button>
+				<i class="fa fa-search modal-icon icon"></i>
+				<h4 class="modal-title set-header">Review Result</h4>
+				<div class="set-header-label">View Review Result and Send to Author.</div>
+			</div>		
+			<div class="modal-body">
+				<div class="row">
+					<?php if(!empty($review_result)){ foreach($review_result as $rs){?>
+					<?php
+						$point = array("originality","technical","methodology","readability","practicability","organization","importance");
+						$val = array("-", "poor","fair","average","above average","excellent");
+					?>
+					<div class="col-md-6">
+						<table class="">
+							<tr><td>Reviewer</td><td><?php echo $this->lib_view->gen_name_reviewer($rs['sub_id'], $rs['reviewer_email']);?></td></tr>
+							<tr><td>Email</td><td><?php echo $rs['reviewer_email'];?></td></tr>
+							<tr><td>Date Review</td><td><?php echo date('d M Y - H:i', strtotime($rs['date_review']));?></td></tr>
+							<tr><td valign="top">Introduction</td><td>: <?php echo strip_tags($rs['introduction_comment']);?></td></tr>
+							<tr><td valign="top">Methodology</td><td>: <?php echo strip_tags($rs['methodology_comment']);?></td></tr>
+							<tr><td valign="top">Results and Discussion</td><td>: <?php echo strip_tags($rs['result_comment']);?></td></tr>
+							<tr><td valign="top">References</td><td>: <?php echo strip_tags($rs['references_comment']);?></td></tr>
+							<tr><td valign="top">Other</td><td>: <?php echo strip_tags($rs['other_comment']);?></td></tr>
+							<tr><td colspan="2">
+								<table class="table table-bordered table-striped">
+								<?php for($a=0; $a<count($point); $a++){?>
+								<tr><td width="100"><?php echo ucwords($point[$a]);?></td><td><?php echo isset($rs[$point[$a]]) ? $rs[$point[$a]]."<i> (".$val[$rs[$point[$a]]].")</i>":'';?></td></tr>	
+								<?php } ?>
+								</table>
+							</td></tr>
+							<tr><td>Result</td><td><?php echo review_result($rs['review_result']);?></td></tr>
+							<tr><td>Additional Comment</td><td><?php echo $rs['additional_comment'];?></td></tr>
+							<tr><td><b>Attachment File:</b><br/>
+								<?php if($rs['review_url'] != ""){?>
+								<a href="<?php echo site_url().$rs['review_url'];?>">Review Attachment</a>
+								<?php }else{ echo "-"; } ?>
+							</td></tr>
+						</table>
+					</div>
+					<?php }}else{ ?>
+						<div class="callout callout-info">
+							<i class="fa fa-info-circle"></i> Waiting review from suggested reviewer.
+						</div>
+					<?php } ?>
+					
+				</div>
+			</div>
+			<div class="modal-footer">
+				<input type="reset" name="reset" value="Close" class="btn btn-white" data-dismiss="modal">				
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="modal inmodal" id="view_review_result" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content animated bounceInDown">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+				<span aria-hidden="true"><i class="fa fa-times"></i></span><span class="sr-only">Close</span></button>
+				<i class="fa fa-edit modal-icon icon"></i>
+				<h4 class="modal-title set-header">Review Result</h4>
+				<div class="set-header-label">Notes from reviewer(s).</div>
+			</div>		
+			<div class="modal-body">
+				<!-- Review Result  -->
+				<div class="row" id="reviewResultData"></div>
+			</div>
+			<div class="modal-footer">
+				<input type="reset" name="reset" value="Close" class="btn btn-white" data-dismiss="modal">				
+			</div>			
+		</div>	
+	</div>
+</div>
+
+<!-- modal decision -->
+<div class="modal inmodal" id="decision" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content animated bounceInDown">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+				<span aria-hidden="true"><i class="fa fa-times"></i></span><span class="sr-only">Close</span></button>
+				<i class="fa fa-edit modal-icon icon"></i>
+				<h4 class="modal-title set-header">Decision</h4>
+				<div class="set-header-label">Send email to author.</div>
+			</div>		
+			<form action="<?php echo site_url().'dashboard/update/editor_decision';?>" method="POST">
+			<div class="modal-body">
+				<input type="hidden" name="sub_id" value="<?php echo $sub[0]['sub_id'];?>">
+				<input type="hidden" name="round" value="<?php echo $sub[0]['round'];?>">
+				<input type="hidden" name="author" value="<?php echo $sub[0]['user_id'];?>">
+				<input type="hidden" name="page" value="<?php echo current_url();?>">
+				<div class="form-group">
+					<label>Decision <span>*</span></label>
+					<select name="status" class="form-control decision-modal" required>
+						<option value="">- Select Decision -</option>
+						<option value="1">Accept</option>
+						<option value="2">Revise</option>
+						<option value="3">Reject</option>
+					</select>
+				</div>
+				<div class="form-group" id="decision-modal-s">
+					<label>Notes</label><br/>
+					<textarea name="other" class="form-control" placeholder="Please put your notes here."></textarea>
+				</div>
+				<div class="form-group" id="revise_days" style="display: none">
+					<!-- reviso -->
+					<label>Revision in days</label>
+					<div class="note">For unlimited revision days, please ignore or keep empty this field.</div>
+					<input type="number" name="revise_days" min="1" max="30" class="form-control" placeholder="Please fill revise manuscript in this days">
+				</div>					
+			</div>
+			<div class="modal-footer">
+				<input type="reset" name="reset" value="Close" class="btn btn-white" data-dismiss="modal">
+				<input type="submit" name="move" value="Send to Author" class="btn btn-info action">
+			</div>			
+			</form>
+		</div>	
+	</div>
+</div>
+
+<!-- modal set reviewer -->
+<div class="modal inmodal" id="modalNewReviewer" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog modal-md">
+		<div class="modal-content animated bounceInDown">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+				<span aria-hidden="true"><i class="fa fa-times"></i></span><span class="sr-only">Close</span></button>
+				<i class="fa fa-zoomin modal-icon icon"></i>
+				<h4 class="modal-title set-header">Set as Reviewer</h4>
+				<div class="set-header-label">Invite as reviewer in this journal.</div>
+			</div>			
+			<div class="modal-body">				
+				<div class="form-group">
+					<label>Find existing reviewer</label>
+					<div class="input-group">
+						<input type="search" class="form-control" name="search_author" placeholder="Type name, email or expertise" id="reviewers">
+						<input type="hidden" id="sub_id_reviewer" value="<?php echo $this->uri->segment(4);?>">
+						<span class="input-group-btn">
+							<button type="submit" class="btn btn-warning">Search</button>
+						</span>
+					</div>
+				</div>
+				<div class="result-reviwer">
+				</div>
+				<!-- form -->
+				<h2 class="hrtext"><span>OR</span></h2>
+				<form method="POST" action="<?php echo site_url().'dashboard/insert/reviewer';?>">
+					<input type="hidden" name="page" value="<?php echo current_url();?>">
+					<input type="hidden" name="sub_id" value="<?php echo $this->uri->segment(4);?>">					
+					<div class="form-group">
+						<label>Salutation <span>*</span></label>
+						<select name="salutation" class="form-control" required>
+							<option value="">- Select Salutation -</option>
+							<option value="Prof.">Prof.</option>
+							<option value="Dr.">Dr.</option>
+							<option value="Mr.">Mr.</option>
+							<option value="Mrs.">Mrs.</option>
+							<option value="Ms.">Ms.</option>
+						</select>
+					</div>
+					<div class="form-group">
+						<label>Fullname <span>*</span></label>
+						<input type="text" name="fullname" class="form-control" placeholder="Fullname" value="<?php echo isset($cr[0]['fullname']) ? $cr[0]['fullname']:'';?>" required>
+					</div>
+					<div class="form-group">
+						<label>Emai <span>*</span></label>
+						<input type="email" name="email" class="form-control" placeholder="email" value="<?php echo isset($cr[0]['email']) ? $cr[0]['email']:'';?>" required>
+					</div>
+					<div class="form-group">
+						<label>Expertise <span>*</span></label>
+						<input type="text" name="expertise" class="form-control" placeholder="Expertise" value="<?php echo isset($cr[0]['expertise']) ? $cr[0]['expertise']:'';?>" required>
+					</div>
+					<div class="form-group">
+						<label>Affiliation/Institution <span>*</span></label>
+						<input type="text" name="affiliation" class="form-control" placeholder="Affiliation" value="<?php echo isset($cr[0]['affiliation']) ? $cr[0]['affiliation']:'';?>" required>
+					</div>
+					<div class="modal-footer">					
+						<input type="reset" name="reset" class="btn btn-default" value="Cancel" data-dismiss="modal">
+						<button type="submit" name="submit" class="btn btn-primary primary"><i class="fa fa-plus-circle"></i> Add</button>
+					</div>									
+				</form>
+			</div>			
+			</form>
+		</div>	
+	</div>
+</div>
+
+<!-- modal revise agreement -->
+<div class="modal inmodal" id="revise-agreement" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content animated bounceInDown">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+				<span aria-hidden="true"><i class="fa fa-remove"></i></span><span class="sr-only">Close</span></button>
+				<i class="fa fa-check-circle modal-icon"></i>
+				<h4 class="modal-title">Revise Agreement</h4>
+				<div>Agree to revise manuscript.</div>
+			</div>
+			<form name="revise_agreement-form" action="<?php echo base_url().'dashboard/update/revise_agreement';?>" method="POST">
+			<div class="modal-body">
+				<input type="hidden" name="sub_id" id="sub_item_id">
+				<input type="hidden" name="round" id="round">
+				<input type="hidden" name="page" value="<?php echo current_url();?>">
+				<div class="msg">If you want to revise your manuscript, please click <b>Yes</b><br/>
+				or if you want to decline your manuscript, please click <b>No</b></div>
+			</div>
+			<div class="modal-footer">
+				<input type="reset" name="reset" class="btn btn-default pull-left" value="Cancel" data-dismiss="modal">
+				<input type="submit" name="action" value="No" class="btn btn-danger">
+				<input type="submit" name="action" value="Yes" class="btn btn-success action">
+			</div>
+			</form>
+		</div>	
+	</div>
+</div>
+
+<!-- modal revise agreement -->
+<div class="modal inmodal" id="screening-mail" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content animated bounceInDown">
+			<div class="modal-body">
+				
+			</div>
+					
+		</div>	
+	</div>
+</div>
+
+
+<!-- modal revise agreement -->
+<div class="modal inmodal" id="modalReviewHistory" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content animated bounceInDown">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+				<span aria-hidden="true"><i class="fa fa-remove"></i></span><span class="sr-only">Close</span></button>
+				<i class="fa fa-clock-o modal-icon"></i>
+				<h4 class="modal-title">Review History</h4>
+				<div>Review manuscript.</div>
+			</div>			
+			<div class="modal-body" id="contentReviewHistory">
+				
+			</div>
+		</div>	
+	</div>
+</div>

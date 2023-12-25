@@ -1,0 +1,2089 @@
+<?php
+
+/**
+ * @package    Journal FTUI/libraries - 2016
+ * @author     Sabbana
+ * @copyright  sstud-io.net
+ * @version    1.0
+ */
+
+if(!defined('BASEPATH'))
+    exit('No direct script access allowed');
+
+class Lib_cms {
+
+    private $ci;
+
+    function __construct() {
+        $this->ci =&get_instance();
+    }
+	 
+	/**
+	 * @ this section announcement CRUD Modules
+	 * @ methods:
+	 * 		- insert
+	 * 		- update
+	 * 		- delete
+	 */
+
+	private function log($event, $table, $key)
+	{
+		return $this->ci->cms->log($this->ci->session->userdata('user_id'), $event, $table, $key);
+	}
+	private function log_submission($sub_id, $status, $desc){
+		return $this->ci->cms->log_submission($sub_id, $status, $desc);
+	}
+    # create announcement
+    # =============================
+    public function insert_announcement(){
+    	$exp = $this->ci->input->post('expire_date').' 00:00:00';
+    	$date_input = $this->ci->input->post('date_input').' 00:00:00';
+    	$data = array(
+    		'user_id' 	=> $this->ci->session->userdata('user_id'),
+    		'ann_title'	=> $this->ci->security->xss_clean($this->ci->input->post('ann_title')),
+     		'ann_description'	=> $this->ci->input->post('ann_description'),
+    		'expire_date'		=> $exp,
+    		'date_input'		=> $date_input != "" ? $date_input : date('Y-m-d H:i:s'),
+    		'date_update'		=> $date_input != "" ? $date_input : date('Y-m-d H:i:s'),
+    	);
+    	$act = $this->ci->cms->insert('announcement', $data);
+    	if($act){
+    		$this->log('Create journal announcement', 'announcement','');
+    		$this->ci->session->set_flashdata('success','New Announcement has been created.');
+    	}
+    	else $this->ci->session->set_flashdata('error','Trouble while saving data.');
+    	redirect('dashboard/announcement');
+    }
+    # update announcement
+    # =======================================
+	public function update_announcement(){
+		$id = $this->ci->input->post('ann_id');
+    	$exp = $this->ci->input->post('expire_date').' 00:00:00';
+    	$date_input = $this->ci->input->post('date_input').' 00:00:00';
+    	$data = array(
+    		'ann_title'	=> $this->ci->security->xss_clean($this->ci->input->post('ann_title')),
+    		'ann_description'	=> $this->ci->input->post('ann_description'),
+    		'expire_date'		=> $exp,
+    		'date_input'		=> $date_input != "" ? $date_input : date('Y-m-d H:i:s'),
+    		'date_update'		=> date('Y-m-d H:i:s'),
+    	);
+    	$act = $this->ci->cms->update('announcement', array('ann_id', $id), $data);
+    	if($act){
+    		$this->log('Update journal announcement', 'announcement', $id);
+    		$this->ci->session->set_flashdata('success','The Announcement has been updated.');
+    	}
+    	else $this->ci->session->set_flashdata('error','Trouble while saving data.');
+    	redirect('dashboard/announcement');
+    }
+
+    # delete announcement
+    # =======================================
+	public function delete_announcement(){
+		$id = $this->ci->input->post('ann_id');
+		$act = $this->ci->cms->delete('announcement', array('ann_id', $id));
+		if($act){
+			$this->log('Delete journal announcement', 'announcement', $id);
+			$this->ci->session->set_flashdata('success','Announcement has been deleted.');
+		}else $this->ci->session->set_flashdata('error','Trouble deleting announcement.');
+		redirect('dashboard/announcement');
+	}
+
+
+	/**
+	 * @ page modules
+	 * @ methods:
+	 * 		- insert
+	 * 		- update
+	 * 		- delete
+	 */
+    # create page
+    # =============================
+    public function insert_page(){
+    	$data = array(
+    		'user_id' 	=> $this->ci->session->userdata('user_id'),
+    		'page_title'	=> $this->ci->security->xss_clean($this->ci->input->post('page_title')),
+     		'page_content'	=> $this->ci->input->post('page_content'),
+    		'date_input'		=> date('Y-m-d H:i:s'),
+    		'date_update'		=> date('Y-m-d H:i:s'),
+    	);
+    	$act = $this->ci->cms->insert('page', $data);
+    	if($act){
+    		$this->log('Create new page', 'page','');
+    		$this->ci->session->set_flashdata('success','New Page has been created.');
+    	}
+    	else $this->ci->session->set_flashdata('error','Trouble while saving data.');
+    	redirect('dashboard/about');
+    }
+
+    # update page
+    # =======================================
+	public function update_page(){
+		$id = $this->ci->input->post('page_id');
+    	$data = array(
+    		'page_title'	=> $this->ci->security->xss_clean($this->ci->input->post('page_title')),
+    		'page_content'	=> $this->ci->input->post('page_content'),
+    		'date_update'	=> date('Y-m-d H:i:s'),
+    	);
+    	$act = $this->ci->cms->update('page', array('page_id', $id), $data);
+    	if($act){
+    		$this->log('Update page', 'page', $id);
+    		$this->ci->session->set_flashdata('success','The Page has been updated.');
+    	}
+    	else $this->ci->session->set_flashdata('error','Trouble while saving data.');
+    	redirect('dashboard/about');
+    }
+
+    # delete page
+    # =======================================
+	public function delete_page(){
+		$id = $this->ci->input->post('page_id');
+		$act = $this->ci->cms->delete('page', array('page_id', $id));
+		if($act){
+			$this->log('Delete page', 'page', $id);
+			$this->ci->session->set_flashdata('success','Page has been deleted.');			
+		}else $this->ci->session->set_flashdata('error','Trouble deleting page.');
+		redirect('dashboard/about');
+	}
+
+	/**
+	 * @ this section is Journal section CRUD Modules
+	 * @ methods:
+	 * 		- insert
+	 * 		- update
+	 * 		- delete
+	 */
+
+    # create journal section
+    # =============================
+    public function insert_section(){
+    	$data = array(
+    		'user_id' 	=> $this->ci->session->userdata('user_id'),
+    		'section_title'	=> $this->ci->security->xss_clean($this->ci->input->post('section_title')),
+     		'section_abv'	=> $this->ci->input->post('section_abv'),
+    		'review_form'		=> $this->ci->input->post('review_form'),
+    		'peer_review'		=> $this->ci->input->post('peer_review') ? $this->ci->input->post('peer_review') : 0,
+    		'abstract_required'		=> $this->ci->input->post('abstract_required') ? $this->ci->input->post('abstract_required') : 0,
+    		'submission_restriction'		=> $this->ci->input->post('submission_restriction') ? $this->ci->input->post('submission_restriction'):0,
+    		'title_restriction'		=> $this->ci->input->post('title_restriction') ? $this->ci->input->post('title_restriction') : 0,
+    		'author_restriction'		=> $this->ci->input->post('author_restriction') ? $this->ci->input->post('author_restriction') : 0,
+    		'date_input'		=> date('Y-m-d H:i:s'),
+    		'date_update'		=> date('Y-m-d H:i:s'),
+    	);
+    	$act = $this->ci->cms->insert('section', $data);
+    	if($act){
+    		$this->log('Create journal section', 'section','');
+    		$this->ci->session->set_flashdata('success','New Section has been created.');
+    	}
+    	else $this->ci->session->set_flashdata('error','Trouble while saving data.');
+    	redirect('dashboard/section');
+    }
+
+    public function insert_section_editor(){    	
+    	$id = $this->ci->input->post('section_id');
+    	$data = array(
+    		'section_id' => $id,
+    		'user_id'	=> $this->ci->input->post('editor')
+    	);
+    	$act = $this->ci->cms->insert('section_editor', $data);
+    	if($act){
+    		$this->log('Create new section editor', 'section_editor','');
+    		$this->ci->session->set_flashdata('success','Section editor has been added.');
+    	}
+    	else $this->ci->session->set_flashdata('error','Trouble while saving data.');
+    	redirect('dashboard/edit/section/'.$id);
+    }
+
+    # update journal section
+    # =============================
+    public function update_section(){
+    	$id = $this->ci->input->post('section_id');
+    	$data = array(    		
+    		'section_title'	=> $this->ci->security->xss_clean($this->ci->input->post('section_title')),
+     		'section_abv'	=> $this->ci->input->post('section_abv'),
+    		'review_form'		=> $this->ci->input->post('review_form'),
+    		'peer_review'		=> $this->ci->input->post('peer_review') ? $this->ci->input->post('peer_review') : 0,
+    		'abstract_required'		=> $this->ci->input->post('abstract_required') ? $this->ci->input->post('abstract_required') : 0,
+    		'submission_restriction'		=> $this->ci->input->post('submission_restriction') ? $this->ci->input->post('submission_restriction'):0,
+    		'title_restriction'		=> $this->ci->input->post('title_restriction') ? $this->ci->input->post('title_restriction') : 0,
+    		'author_restriction'		=> $this->ci->input->post('author_restriction') ? $this->ci->input->post('author_restriction') : 0,    		
+    		'date_update'		=> date('Y-m-d H:i:s'),
+    	);    	
+    	$act = $this->ci->cms->update('section', array('section_id', $id), $data);
+    	if($act){
+    		$this->log('Update journal section', 'section', $id);
+    		$this->ci->session->set_flashdata('success','The Section has been updated.');
+    	}
+    	else $this->ci->session->set_flashdata('error','Trouble while saving data.');
+    	redirect('dashboard/section');
+    }
+
+	# delete section
+    # =======================================
+	public function delete_section(){
+		$id = $this->ci->input->post('section_id');
+		$act = $this->ci->cms->delete('section', array('section_id', $id));
+		if($act){
+			$this->log('Delete journal section', 'section', $id);
+			$this->ci->session->set_flashdata('success','Journal Section has been deleted.');
+		}else $this->ci->session->set_flashdata('error','Trouble deleting Journal Section.');
+		redirect('dashboard/section');
+	}
+
+	public function delete_section_editor($sid, $uid){
+		$act = $this->ci->cms->delete('section_editor', array('user_id', $uid));
+		if($act){
+			$this->log('Delete section editor', 'section_editor', $sid);
+			$this->ci->session->set_flashdata('success','Section editor has been deleted.');
+		}else $this->ci->session->set_flashdata('error','Trouble deleting Section editor.');
+		redirect('dashboard/edit/section/'.$sid);
+	}
+	
+	/**
+	 * @ user module
+	 * @ update
+	 */
+
+	public function insert_user(){
+		$this->ci->load->library('form_validation');
+		$this->ci->form_validation->set_rules('user_id','Username','required|trim|alpha_numeric');
+		$this->ci->form_validation->set_rules('password','Password','required|trim|alpha_numeric|min_length[6]');
+		$this->ci->form_validation->set_rules('repassword','Confirm Password','required|matches[password]');
+		if($this->ci->form_validation->run() == FALSE){
+			$msg = validation_errors();
+			$this->ci->session->set_flashdata('warning', $msg);
+			redirect('dashboard/create/user');
+		}else{
+			$pass = $this->ci->security->xss_clean($this->ci->input->post('password'));
+			$data = array(
+				'user_id'	=> $this->ci->security->xss_clean($this->ci->input->post('user_id')),
+				'section_id' => $this->ci->security->xss_clean($this->ci->input->post('section_id')),
+				'password'	=> md5($pass),
+				'salutation'	=> $this->ci->security->xss_clean($this->ci->input->post('salutation')),
+				'first_name'	=> $this->ci->security->xss_clean($this->ci->input->post('first_name')),
+				'last_name'		=> $this->ci->security->xss_clean($this->ci->input->post('last_name')),				
+				'email'		=> $this->ci->security->xss_clean($this->ci->input->post('email')),
+				'phone'		=> $this->ci->security->xss_clean($this->ci->input->post('phone')),
+				'fax'		=> $this->ci->security->xss_clean($this->ci->input->post('fax')),
+				'status'	=> 1,
+				'postal_address' => $this->ci->input->post('postal_address'),
+				'date_create'	=> date('Y-m-d H:i:s'),
+				'date_update'	=> date('Y-m-d H:i:s'),
+			);
+			$role = $this->ci->input->post('role_id');			
+			$act = $this->ci->cms->insert('users', $data);
+			if($act){
+				# set section editor
+				if (in_array(4, $role))
+					$this->ci->cms->insert('section_editor', array('user_id' => $data['user_id'], 'section_id' => $data['section_id']));
+
+				$this->log('Create new user', 'users', $data['user_id']);
+				for($a=0; $a<count($role); $a++){
+					$this->log('Create user as '.$role[$a], 'roleuser', $data['user_id']);
+					$this->ci->cms->insert('roleuser', array('user_id' => $data['user_id'], 'role_id' => $role[$a]));
+				}
+				$this->ci->load->model('mdl_login');
+				$result = array(					
+					'user_id'	=> $data['user_id'],
+					'email'		=> $data['email'],
+					'name'		=> $data['first_name'].' '.$data['last_name'],
+					'status'	=> $this->ci->mdl_login->get_rolename_user($data['user_id'])
+				);
+				$message = $this->ci->load->view('template/mailer/author/account_created', $result, TRUE);
+				$this->ci->load->library('email'); // load email library
+				$this->ci->email->from(MAILSYSTEM, 'IJTech');
+				$this->ci->email->to($data['email']);
+				$this->ci->email->bcc(BCC_MAILSYSTEM_MULTI, 2);
+				$this->ci->email->subject('Account Created in IJTech Online System');
+				$this->ci->email->message($message);
+				if($this->ci->email->send()){
+					$this->log('Sending email to '.$data['email'].' - Registration process', 'users', $data['user_id']);
+					$this->ci->session->set_flashdata('success','Registration process successfully');
+				}else{
+					$this->ci->session->set_flashdata('warning','<b>Warning!</b> We could not send user account to email. Please check the email is valid.');
+				}				
+			}else
+				$this->ci->session->set_flashdata('error','Trouble while register new user!');
+			redirect('dashboard/create/user');
+		}
+	}
+	
+	/**
+	 * @ issue modules
+	 * @ methods:
+	 * 		- insert
+	 * 		- update
+	 * 		- delete
+	 */
+    # create issue
+    # =============================
+    public function insert_issue(){
+    	$date = $this->ci->input->post('date_publish').' '.date('H:i:s');
+    	$data = array(
+    		'user_id' 	=> $this->ci->session->userdata('user_id'),
+    		'volume'	=> (int)$this->ci->input->post('volume'),
+    		'issue_number'	=> (int)$this->ci->input->post('issue_number'),
+     		'year'	=> (int)$this->ci->input->post('year'),
+    		'date_publish'		=> $date != "" ? $date : date('Y-m-d H:i:s'),
+    		'date_input'		=> date('Y-m-d H:i:s'),
+    		'date_update'		=> date('Y-m-d H:i:s'),
+    	);
+
+    	$issue = $data['volume'].'-'.$data['issue_number'].'-'.$data['year'];
+    	if($_FILES['userfile']['tmp_name'] !== ""){
+			$config['upload_path'] = './uploads/cover/';
+			$config['allowed_types'] = 'jpg|jpef|png|gif';
+			$config['max_size'] = '2048'; # Max size 2 MB
+			$config['overwrite'] = true;
+			
+			$ext = pathinfo($_FILES['userfile']['name'], PATHINFO_EXTENSION);
+			$fileName = $issue.'.'.$ext;
+			$config['file_name'] = $fileName;
+
+			$path = 'uploads/cover/';
+			$this->ci->load->library('upload', $config);
+			if(!$this->ci->upload->do_upload()){
+				$msg = $this->ci->upload->display_errors();
+				$this->ci->session->set_flashdata('error','Trouble saving cover image.<br/>'.$msg);
+			}else{
+				$data['cover_image'] = $path.$fileName;
+				$this->ci->cms->update('issue', array(), array('status'=>0));
+				$act = $this->ci->cms->insert('issue', $data);
+				if($act){
+					$this->log('Create journal issue', 'issue','');
+					$this->ci->session->set_flashdata('success','Journal Issue has been created.');
+				}
+				else $this->ci->session->set_flashdata('error','Trouble saving Issue.');
+			}
+		}else{
+			$this->ci->cms->update('issue', array(), array('status'=>0));
+			$act = $this->ci->cms->insert('issue', $data);
+			if($act){
+				$this->log('Create journal issue', 'issue','');
+				$this->ci->session->set_flashdata('success','Journal Issue has been created.');
+			}
+			else $this->ci->session->set_flashdata('error','Trouble saving Issue.');
+		}
+    	redirect('dashboard/issue');
+    }
+
+    # update issue
+    # =======================================
+	public function update_issue(){
+		$id = $this->ci->input->post('issue_id');
+		$date = $this->ci->input->post('date_publish').' '.date('H:i:s');
+    	$data = array(
+    		'volume'	=> (int)$this->ci->input->post('volume'),
+    		'issue_number'	=> (int)$this->ci->input->post('issue_number'),
+     		'year'	=> (int)$this->ci->input->post('year'),
+     		'date_publish'	=> $date != "" ? $date : date('Y-m-d H:i:s'),
+    		'date_update'	=> date('Y-m-d H:i:s'),
+    	);
+    	$issue = $data['volume'].'-'.$data['issue_number'].'-'.$data['year'];
+    	if($_FILES['userfile']['tmp_name'] !== ""){
+			$config['upload_path'] = './uploads/cover/';
+			$config['allowed_types'] = 'jpg|jpef|png|gif';
+			$config['max_size'] = '2048'; # Max size 2 MB
+			$config['overwrite'] = true;
+			
+			$ext = pathinfo($_FILES['userfile']['name'], PATHINFO_EXTENSION);
+			$fileName = $issue.'.'.$ext;
+			$config['file_name'] = $fileName;
+
+			$path = 'uploads/cover/';
+			$this->ci->load->library('upload', $config);
+			if(!$this->ci->upload->do_upload()){
+				$msg = $this->ci->upload->display_errors();
+				$this->ci->session->set_flashdata('error','Trouble updating cover image.<br/>'.$msg);
+			}else{
+				$data['cover_image'] = $path.$fileName;
+				$act = $this->ci->cms->update('issue', array('issue_id', $id), $data);
+				if($act){
+					$this->log('Update journal issue - upload image cover', 'issue', $id);
+					$this->ci->session->set_flashdata('success','Journal Issue has been updated.');
+				}
+				else $this->ci->session->set_flashdata('error','Trouble updating Issue.');
+			}
+		}else{
+			$act = $this->ci->cms->update('issue', array('issue_id', $id), $data);
+			if($act){
+				$this->log('Update journal issue - meta data', 'issue', $id);
+				$this->ci->session->set_flashdata('success','Journal Issue has been updated.');
+			}
+			else $this->ci->session->set_flashdata('error','Trouble updating Issue.');
+		}
+    	redirect('dashboard/issue');
+    }
+
+	# update status issue
+	public function update_issue_status(){
+    	$id = $this->ci->input->post('issue_id');
+		$act = $this->ci->cms->update_issue_status($id);
+		if($act){
+			$this->log('Update current issue', 'issue', $id);
+			$this->ci->session->set_flashdata('success','Journal Issue has been updated.');
+		}else $this->ci->session->set_flashdata('error','Trouble updating issue.');
+		redirect('dashboard/issue');
+    }
+
+    # delete issue
+    # =======================================
+	public function delete_issue(){
+		$id = $this->ci->input->post('issue_id');
+		$act = $this->ci->cms->delete('issue', array('issue_id', $id));
+		if($act){
+			$this->log('Delete journal issue', 'issue', $id);
+			$this->ci->session->set_flashdata('success','Journal Issue has been deleted.');
+		}else $this->ci->session->set_flashdata('error','Trouble deleting issue.');
+		redirect('dashboard/issue');
+	}
+
+	# change avatar
+	# ====================================
+	public function change_avatar(){
+		$id = md5($this->ci->session->userdata('user_id'));
+		if($_FILES){
+			$config['upload_path'] = './uploads/profile/';
+			$config['allowed_types'] = 'jpg|jpef|png';
+			$config['max_size'] = '10240'; # Max size 10 MB
+			$config['overwrite'] = true;
+			
+			$ext = pathinfo($_FILES['userfile']['name'], PATHINFO_EXTENSION);
+			$fileName = $id.'.'.$ext;
+			$config['file_name'] = $fileName;
+
+			$path = 'uploads/profile/';
+			$this->ci->load->library('upload', $config);
+			if(!$this->ci->upload->do_upload()){
+				$msg = $this->ci->upload->display_errors();
+				$this->ci->session->set_flashdata('error','Trouble updating user avatar.<br/>'.$msg);
+			}else{
+				$data['avatar'] = $path.$fileName;
+				$act = $this->ci->cms->update('users', array('MD5(user_id)', $id), array('profile_image'=>$path.$fileName));
+				if($act){
+					$this->log('Update photo profile', 'users', $id);
+					$this->ci->session->set_userdata('avatar', $path.$fileName);
+					$this->ci->session->set_flashdata('success','Profile image has been updated.');
+				}else $this->ci->session->set_flashdata('error','Trouble updating profile image.');
+			}
+		}
+		redirect('dashboard/profile/'.$id);
+	}
+
+	# change password 
+	# ============================
+	public function change_password(){
+		$id = $this->ci->input->post('user_id');
+		$pass = $this->ci->security->xss_clean($this->ci->input->post('user_password'));
+		$repass = $this->ci->security->xss_clean($this->ci->input->post('user_repassword'));
+		if($pass !== $repass){
+			$msg = 'Confirm password should be match with password';
+			$this->ci->session->set_flashdata('error', $msg);
+		}else{
+			$data = array('password' => md5($pass));
+			$change = $this->ci->cms->update('users', array('user_id', $id), $data);
+			if($change){
+				$this->log('Change password', 'users', $id);
+				$this->ci->session->set_flashdata('success','Your password has been updated.');
+			}
+			else
+				$this->ci->session->set_flashdata('error','Trouble while updating your password!');
+		}
+		redirect('dashboard/edit/password');
+	}
+	
+	# change status
+	# ============================
+	public function change_user_status(){
+		$id = $this->ci->security->xss_clean($this->ci->input->post('user_id'));
+		$sts = $this->ci->security->xss_clean($this->ci->input->post('status'));
+		if($sts == 0) $status = 1; else $status = 0;
+		$data = array('status' => $status);
+		$change = $this->ci->cms->update('users', array('user_id', $id), $data);
+		if($change){
+			$this->log('Change user status', 'users', $id);
+			$this->ci->session->set_flashdata('success','User status has been updated.');
+		}
+		else
+			$this->ci->session->set_flashdata('alert','Trouble while updating user status!');
+		redirect('dashboard/users');
+	}
+	
+	public function reset_password(){
+		$id = $this->ci->security->xss_clean($this->ci->input->post('user_id'));		
+		$change = $this->ci->cms->update('users', array('user_id', $id), array('password'=>md5('123456')));
+		if($change){
+			$this->log('Reset password user', 'users', $id);
+			$this->ci->session->set_flashdata('success','User password has been updated.');
+		}
+		else
+			$this->ci->session->set_flashdata('alert','Trouble while updating user password!');
+		redirect('dashboard/users');
+	}
+	
+	# delete users
+	public function delete_user(){
+		$id = $this->ci->input->post('user_id');
+		$act = $this->ci->cms->delete('users', array('user_id', $id));
+		if($act){
+			$this->log('Delete user', 'users', $id);
+			$this->ci->cms->delete('roleuser', array('user_id', $id));
+			$this->ci->session->set_flashdata('success','User has been deleted.');	
+		} 
+		else $this->ci->session->set_flashdata('error','Trouble deleting user.');
+		redirect('dashboard/users');
+	}
+
+	public function set_role_user(){
+		$id = $this->ci->input->post('user_id');
+		$role = $this->ci->input->post('role_id');
+		$act = $this->ci->cms->update('users', array('user_id', $id), array('role_id' => $role));
+		if($act){
+			$this->log('Set role user ', 'users','');
+			$this->ci->session->set_flashdata('success','User role has been updated.');
+		}else $this->ci->session->set_flashdata('error','Trouble updating user role.');
+		redirect('dashboard/users');
+	}
+
+	public function update_user(){
+		$id = $this->ci->input->post('user_id');
+    	$data = array(
+    		'salutation'	=> $this->ci->security->xss_clean($this->ci->input->post('salutation')),
+    		'first_name'	=> $this->ci->security->xss_clean($this->ci->input->post('first_name')),
+    		'last_name'	=> $this->ci->security->xss_clean($this->ci->input->post('last_name')),
+    		'section_id'	=> $this->ci->security->xss_clean($this->ci->input->post('section_id')),
+    		'phone'	=> $this->ci->security->xss_clean($this->ci->input->post('phone')),
+    		'fax'	=> $this->ci->security->xss_clean($this->ci->input->post('fax')),
+    		'email'	=> $this->ci->security->xss_clean($this->ci->input->post('email')),
+    		'email2'	=> $this->ci->security->xss_clean($this->ci->input->post('email2')),
+     		'postal_address'	=> $this->ci->security->xss_clean($this->ci->input->post('postal_address')),
+     		'scopus_id'	=> $this->ci->security->xss_clean($this->ci->input->post('scopus_id')),
+     		'affiliation'	=> $this->ci->security->xss_clean($this->ci->input->post('affiliation')),
+     		'affiliation2'	=> $this->ci->security->xss_clean($this->ci->input->post('affiliation2')),
+     		'expertise'	=> $this->ci->security->xss_clean($this->ci->input->post('expertise')),
+    		'country'	=> $this->ci->input->post('country'),
+    		'short_biography'	=> $this->ci->input->post('short_biography'),
+    		'date_update'		=> date('Y-m-d H:i:s'),
+    	);
+    	$act = $this->ci->cms->update('users', array('user_id', $id), $data);
+    	if($act){
+    		$this->ci->session->unset_userdata('section');
+    		$this->ci->session->set_userdata('section', $data['section_id']);    		
+    		$this->ci->session->set_flashdata('success','The User Profile has been updated.');
+    	}
+    	else $this->ci->session->set_flashdata('error','Trouble while saving data.');
+    	redirect('dashboard/profile/'.$id);
+	}
+
+	/**
+	 * @ this section submission CRUD Modules
+	 * @ methods:
+	 * 		- insert
+	 * 		- update
+	 * 		- delete
+	 */
+
+    # create announcement
+    # =============================
+    public function insert_submission(){    	
+    	$data = array(
+    		'user_id'	=> $this->ci->session->userdata('user_id'),
+    		'section_id' 	=> $this->ci->input->post('section_id'),
+    		'sub_title'	=> $this->ci->security->xss_clean($this->ci->input->post('sub_title')),
+     		'abstract'	=> $this->ci->input->post('abstract'),
+     		'keywords'	=> $this->ci->security->xss_clean($this->ci->input->post('keywords')),
+     		'sub_references'	=> $this->ci->input->post('sub_references'),
+    		'date_input'		=> date('Y-m-d H:i:s'),
+    		'date_update'		=> date('Y-m-d H:i:s'),
+    	);
+    	
+    	$this->ci->db->insert('submission', $data);
+    	$sub_id = $this->ci->db->insert_id();
+    	if($sub_id !== Null){
+    		# default author
+    		$this->log_submission($sub_id, 0, 'Start submission');
+    		$this->log('Create new submission', 'submission', $sub_id);
+    		$this->ci->cms->default_author($sub_id, $this->ci->session->userdata('user_id'));
+    		$this->ci->session->set_flashdata('success','New article has been created.');
+    	}
+    	else $this->ci->session->set_flashdata('error','Trouble while saving data.');
+    	redirect('dashboard/create/author/'.$sub_id);
+    }
+
+	public function update_submission($param = null){
+		$action = $this->ci->input->post('submit');
+		$id = $this->ci->input->post('sub_id');
+		$round = $this->ci->input->post('round');
+		if ($param !== null){
+			$is_funder = $this->ci->input->post('is_funder');
+			$cover = strip_tags($this->ci->input->post('cover_letter'));
+			$data = array(
+				'cover_letter'	=> $this->ci->security->xss_clean($cover),
+				'not_publish'	=> $this->ci->input->post('publish') != null ? $this->ci->input->post('publish') : 0,
+				'read_ethics'	=> $this->ci->input->post('read') != null ? $this->ci->input->post('read') : 0,
+			);
+			if ($is_funder == 0)
+				$this->ci->cms->clear_submission_funder($id);
+
+			# if attach file
+			if($_FILES['userfile']['tmp_name'] !== ""){
+				$config['upload_path'] = './uploads/cover/';
+				$config['allowed_types'] = 'pdf';
+				$config['max_size'] = '10240'; # Max size 10 MB
+				$config['overwrite'] = true;
+				
+				$ext = pathinfo($_FILES['userfile']['name'], PATHINFO_EXTENSION);
+				$fileName = "attach_cover_".$id.'.'.$ext;
+				$config['file_name'] = $fileName;
+
+				$path = 'uploads/cover/';
+				$this->ci->load->library('upload', $config);
+				if(!$this->ci->upload->do_upload()){
+					$msg = $this->ci->upload->display_errors();
+					$this->ci->session->set_flashdata('error','Trouble attach file.<br/>'.$msg);
+				}else{
+					$datafile = array(
+			    		'sub_id' => $id,
+			    		'type'	 => 5,
+			    		'round'	=> $round,
+			    		'file_url'	=> $path.$fileName
+			    	);					
+					$this->ci->cms->insert('submission_file', $datafile);
+				}
+			}
+			
+			# update
+			$act = $this->ci->cms->update('submission', array('sub_id', $id), $data);
+			if($act){
+				$this->log('Update submission detail', 'submission', $id);
+	    		$this->ci->session->set_flashdata('success','Article detail data has been updated.');
+			}
+	    	else $this->ci->session->set_flashdata('error','Trouble while updating data.');
+			if($action == "Save")
+				redirect('dashboard/edit/detail/'.$id);
+			else
+				redirect('dashboard/create/suplement/'.$id);
+		}else{
+			$data = array( 
+	    		'section_id' 	=> $this->ci->input->post('section_id'),
+	    		'sub_title'	=> $this->ci->security->xss_clean($this->ci->input->post('sub_title')),
+	     		'abstract'	=> $this->ci->input->post('abstract'),
+	     		'keywords'	=> $this->ci->security->xss_clean($this->ci->input->post('keywords')),
+	     		'sub_references'	=> $this->ci->input->post('sub_references'),
+	    		'date_update'		=> date('Y-m-d H:i:s'),
+	    	);
+	    	$act = $this->ci->cms->update('submission', array('sub_id', $id), $data);
+	    	if($act){
+	    		$this->log('Update submission meta data', 'submission', $id);
+	    		$this->ci->session->set_flashdata('success','Article meta data has been updated.');
+	    	}
+	    	else $this->ci->session->set_flashdata('error','Trouble while updating data.');
+			if($action == "Save")
+				redirect('dashboard/edit/submission/'.$id);
+			else
+				redirect('dashboard/create/author/'.$id);	
+		}
+    }
+
+    public function withdraw(){    	
+    	$page = $this->ci->security->xss_clean($this->ci->input->post('page'));
+    	$sub_id = $this->ci->security->xss_clean($this->ci->input->post('sub_id'));
+    	$reason = $this->ci->security->xss_clean($this->ci->input->post('reason'));
+    	$update = $this->ci->cms->withdraw_manuscript($sub_id, $reason);
+    	if ($update){
+    		$this->log('Withdraw submission '.$sub_id, 'submission', $sub_id);
+    		$this->log_submission($sub_id, 99, 'Withdraw submission ');
+    		$this->ci->session->set_flashdata('success','All process related on this manuscript has been stoped!');
+    	}
+    	redirect($page);
+    }
+
+    public function insert_selected_author(){
+    	$page = $this->ci->input->post('page');
+    	$user_id = $this->ci->input->post('user_id');
+    	$sub_id = $this->ci->input->post('sub_id');
+    	$author = $this->ci->cms->get_user($user_id);
+    	$tot = $this->ci->cms->count_author_submission($sub_id);
+    	$data = array(
+    		'sub_id' => $sub_id,
+    		'salutation' => $author[0]['salutation'],
+    		'first_name'	=> $author[0]['first_name'],
+    		'last_name'	=> $author[0]['last_name'],
+    		'email'	=> $author[0]['email'],
+    		'affiliation'	=> '- '.$author[0]['affiliation'].($author[0]['affiliation2'] !== '' && $author[0]['affiliation2'] !== NULL  ? '<br/>- '.$author[0]['affiliation2']:''),
+    		'short_biography'	=> $author[0]['short_biography'],
+    		'country'	=> $author[0]['country'],    		
+    		'sort'	=> $tot + 1,
+    	);    	
+    	$act = $this->ci->cms->insert('submission_author', $data);
+    	if ($act){
+    		$this->log('Add existing author with email : '.$author[0]['email'].' to submission id : '.$sub_id, 'submission_author', $sub_id);
+    		$this->ci->session->set_flashdata('success','Succeessfully add author from existing data');
+    	}
+    	redirect($page);
+    }
+
+    public function set_coauthor(){
+    	$page = $this->ci->input->post('page');
+    	$sa_id = $this->ci->input->post('sa_id');
+    	$sub_id = $this->ci->input->post('sub_id');
+    	$act = $this->ci->cms->set_coauthor($sub_id, $sa_id);
+    	if ($act)
+    		$this->ci->session->set_flashdata('success','Succeessfully set author as corresponding author');    	
+    	redirect($page);	
+    }
+
+	public function insert_selected_reviewer(){
+    	$page = $this->ci->input->post('page');
+    	$sr_id = $this->ci->input->post('sr_id');
+    	$sub_id = $this->ci->input->post('sub_id');
+    	$reviewer = $this->ci->cms->get_user($sr_id);
+    	$data = array(
+    		'sub_id' => $sub_id,
+    		'user_id' => $this->ci->session->userdata('user_id'),
+    		'salutation'	=> $reviewer[0]['salutation'],
+    		'fullname'	=> $reviewer[0]['first_name'].' '.$reviewer[0]['last_name'],
+    		'email'	=> $reviewer[0]['email'],
+    		'expertise'	=> $reviewer[0]['expertise'],
+    		'affiliation'	=> $reviewer[0]['affiliation'],
+    	);    	
+    	$act = $this->ci->cms->insert('submission_reviewer', $data);
+    	if ($act){
+    		$this->log('Add existing reviewer with email : '.$reviewer[0]['email'].' to submission id : '.$sub_id, 'submission_reviewer', $sub_id);
+    		$this->ci->session->set_flashdata('success','Succeessfully add reviewer from existing data');
+    	}
+    	redirect($page);
+    }
+
+    public function delete_submission(){
+    	$page = $this->ci->input->post('page');
+    	$id = $this->ci->input->post('sub_id');
+    	$clear = $this->ci->cms->clear_submission($id);
+    	if($clear){
+	    	$act = $this->ci->cms->delete('submission', array('sub_id', $id));
+			if($act){
+				$this->log('Delete submission', 'submission', $id);
+				$this->ci->session->set_flashdata('success','Submission succeessfully deleted.');
+			}
+		}
+    	else $this->ci->session->set_flashdata('error','Trouble while deleting data.');
+    	redirect($page);
+    }
+
+    public function insert_suplement(){
+    	$id = $this->ci->input->post('sub_id');
+    	$type = $this->ci->input->post('type');
+    	$round = $this->ci->input->post('round');
+    	$data = array(
+    		'sub_id' => $id,
+    		'type'	 => $type,
+    		'round'	=> $round,
+    		'file_description'	=> $this->ci->input->post('file_description'),
+    	);
+		if($_FILES['userfile']['tmp_name'] !== ""){
+
+			$path = 'uploads/submission/manuscript/';
+			$cpath = './'.$path.$id;
+			if(!is_dir($cpath))
+				mkdir($cpath, 0777);
+
+			$ext = pathinfo($_FILES['userfile']['name'], PATHINFO_EXTENSION);			
+			$fileName = $this->ci->lib_view->gen_manuscript_name($id).'.'.$ext;
+			$config['file_name'] = $fileName;
+			$config['overwrite'] = true;
+			$config['upload_path'] = $cpath;
+			$config['max_size'] = '10240'; # Max size 10 MB
+			$config['allowed_types'] = 'doc|docx|DOC|DOCX';
+
+			if ($type == 3 || $type == 0){
+				$path = 'uploads/submission/attachment/';
+				$cpath = './'.$path.$id;
+				if(!is_dir($cpath))
+					mkdir($cpath, 0777);
+				
+				$config['upload_path'] = $cpath;
+				$config['allowed_types'] = 'jpg|jpeg|png|gif|doc|docx|pdf';
+				$config['max_size'] = '2048'; # Max size 2 MB
+			}
+
+			if ($type == 2)
+				$config['allowed_types'] = 'pdf|PDF';
+			
+			if ($type == 4){
+				$config['allowed_types'] = 'pdf|PDF';
+				$fileName = "Response_letter_".$fileName;
+				$config['file_name'] = $fileName;
+			}
+
+			$this->ci->load->library('upload', $config);
+			if(!$this->ci->upload->do_upload()){
+				$msg = $this->ci->upload->display_errors();
+				$this->ci->session->set_flashdata('invalid','Trouble uploading file.<br/>'.$msg);
+			}else{
+				$data['file_url'] = $cpath.'/'.$fileName;
+				$act = $this->ci->cms->insert('submission_file', $data);
+				if($act){
+					$this->log('Upload file submission : '.$fileName, 'submission_file', $id);
+					$this->ci->session->set_flashdata('success','File succeessfully uploaded.');
+				}
+		    	else $this->ci->session->set_flashdata('error','Trouble while uploading file.');
+			}
+		}
+		redirect('dashboard/create/suplement/'.$id);
+	}
+
+	public function delete_suplement_file($id, $id2){
+		if($this->ci->input->post('sub_id') !== "")
+			$id = $this->ci->input->post('sub_id');
+		
+		if($this->ci->input->post('sf_id') !== "")
+			$id2 = $this->ci->input->post('sf_id');
+
+		$page = $this->ci->input->post('page');
+
+		$url = $this->ci->cms->current_suplement_file($id2);
+		if (file_exists('./'.$url[0]['file_url']))
+			unlink('./'.$url[0]['file_url']);
+
+		$act = $this->ci->cms->delete('submission_file', array('sf_id', $id2));
+		if($act){
+			$this->log('Delete submission file','submission_file', $id2);
+			$this->ci->session->set_flashdata('success','File succeessfully deleted.');
+		}
+    	else $this->ci->session->set_flashdata('error','Trouble while deleting file.');
+    	if($page !== "")
+    		redirect($page);
+    	else	
+    		redirect('dashboard/create/suplement/'.$id);
+	}
+
+	# remove funder 
+	public function delete_funder(){
+		$page = $this->ci->input->post('page');
+		$id = $this->ci->input->post('sfunder_id');
+		$act = $this->ci->cms->delete('submission_funder', array('sfunder_id', $id));
+		if($act)
+			$this->ci->session->set_flashdata('success','Funder has been deleted.');
+		else $this->ci->session->set_flashdata('danger','Trouble removing data.');
+		redirect($page);
+	}
+
+
+	# insert athor submission/article
+	public function insert_author(){
+		$id = $this->ci->input->post('sub_id');
+		$tot = $this->ci->cms->count_author_submission($id);
+		$data = array(
+			'sub_id'	=> $id,
+			'salutation'	=> $this->ci->security->xss_clean($this->ci->input->post('salutation')),
+			'first_name'	=> $this->ci->security->xss_clean($this->ci->input->post('first_name')),
+			'last_name'	=> $this->ci->security->xss_clean($this->ci->input->post('last_name')),
+			'email'	=> $this->ci->security->xss_clean($this->ci->input->post('email')),
+			'affiliation'	=> $this->ci->security->xss_clean($this->ci->input->post('affiliation')),
+			'short_biography'	=> $this->ci->security->xss_clean($this->ci->input->post('short_biography')),
+			'country'	=> $this->ci->input->post('country'),
+			'sort'	=> $tot+1
+		);
+		$act = $this->ci->cms->insert('submission_author', $data);
+		if($act){
+			$this->log('Add author into submission with id : '.$id, 'submission_author', $id);
+			$this->ci->session->set_flashdata('success','Author has been added to this article.');
+		}
+    	else $this->ci->session->set_flashdata('error','Trouble while saving data.');
+		redirect('dashboard/create/author/'.$id);			
+	}
+
+	# delete author
+	public function delete_author($id, $id2, $migrate = false){
+		$act = $this->ci->cms->delete('submission_author', array('sa_id', $id2));
+		if($act){
+			$this->log('Delete submission athor','submission_author', $id2);
+			$this->ci->session->set_flashdata('success','Author succeessfully deleted.');
+		}
+    	else $this->ci->session->set_flashdata('error','Trouble while deleting author.');
+    	if($migrate)
+    		redirect('dashboard/migrate/'.$id.'/authors');
+    	else
+    		redirect('dashboard/create/author/'.$id);
+	}
+
+	# insert reviewer submission/article
+	public function insert_reviewer(){
+		$page = $this->ci->input->post('page');
+		$id = $this->ci->input->post('sub_id');
+		$data = array(
+			'sub_id'	=> $id,
+			'user_id'	=> $this->ci->security->xss_clean($this->ci->session->userdata('user_id')),
+			'salutation'	=> $this->ci->security->xss_clean($this->ci->input->post('salutation')),
+			'fullname'	=> $this->ci->security->xss_clean($this->ci->input->post('fullname')),
+			'email'	=> $this->ci->security->xss_clean($this->ci->input->post('email')),
+			'expertise'	=> $this->ci->security->xss_clean($this->ci->input->post('expertise')),
+			'affiliation'	=> $this->ci->security->xss_clean($this->ci->input->post('affiliation')),
+		);
+
+		$act = $this->ci->cms->insert('submission_reviewer', $data);
+		if($act){
+			$this->log('Add reviewer into submission with id : '.$id, 'submission_reviewer', $id);
+			$this->ci->session->set_flashdata('success','Reviewer has been added to this article.');
+		}
+    	else $this->ci->session->set_flashdata('error','Trouble while saving data.');
+    	if(isset($page))
+    		redirect($page);
+    	else
+    		redirect('dashboard/create/reviewer/'.$id);
+	}
+
+	# delete author
+	public function delete_reviewer($id, $id2){
+		$act = $this->ci->cms->delete('submission_reviewer', array('sr_id', $id2));
+		if($act){
+			$this->log('Delete submission reviewer','submission_reviewer', $id2);
+			$this->ci->session->set_flashdata('success','Reviewer succeessfully deleted.');
+		}
+    	else $this->ci->session->set_flashdata('error','Trouble while deleting reviewer.');
+    	redirect('dashboard/create/reviewer/'.$id);
+	}
+	
+	public function insert_agreement(){
+		$sub_id = $this->ci->input->post('sub_id');
+		$author = $this->ci->cms->get_corresponding_author($sub_id);
+		$sub = $this->ci->cms->current_submission($sub_id);
+		$this->ci->load->library('email'); # load email library
+
+		$pass_eic = $this->ci->cms->is_pass_screening_by_eic($sub_id);
+		if (count($author) > 0){
+			$data = array(
+				'date_submit' => date('Y-m-d H:i:s'),
+				'sub_status' => $pass_eic ? 2 : 1,
+			);
+			$act = $this->ci->cms->update('submission', array('sub_id', $sub_id), $data);
+			if($act){				
+				# confirm reminder
+				if(true){
+					$this->ci->load->model('Mdl_reminder','reminder');
+					$this->ci->reminder->cofirm_reminder($sub_id, $author[0]['email'], 1);
+				}
+				$this->log_submission($sub_id, 1,'Submit manuscript');
+				$this->log('Submit journal','submission', $sub_id);
+				# send mail to all related author
+				$journal_id = ($sub[0]['round'] > 1 ? 'R'.($sub[0]['round']-1).'-':'').$sub[0]['section_abv'].'-'.$sub[0]['sub_id'];
+				$msg_author = array();
+				foreach ($author as $a) {
+					$data = array(
+						'journal_id' => $journal_id,
+						'journal'	=> $sub,
+						'author'	=> $a
+					);
+					$email = $a['email'];
+					if($email){
+						$message = $this->ci->load->view('template/mailer/author/submission_confirmation', $data, TRUE);
+						$this->ci->email->from(MAILSYSTEM, 'IJTech');
+						$this->ci->email->to($email);
+						$this->ci->email->bcc(BCC_MAILSYSTEM_MULTI, 2);
+						$this->ci->email->subject('[IJTech]: Manuscript Submission Confirmation for : '.$journal_id);
+						$this->ci->email->message($message);
+						$is_send = $this->ci->email->send();
+						if($is_send){
+							$this->log('Sending email to related author, email : '.$email, 'submission_author', $a['sa_id']);
+							array_push($msg_author, $a['salutation'].' '.$a['first_name'].' '.$a['last_name']);
+						}
+					}
+				}
+
+				# send to editors
+				if ($pass_eic && $sub[0]['round'] == 1){
+					# insert submission_screening					
+					$pass = array('sub_id' => $sub_id, 'user_id' => $this->ci->session->userdata('user_id'), 'round' => 1, 'status'	=> 1, 'section_id'	=> 0);
+					$this->ci->db->insert('submission_screening', $pass);
+				}else{
+					$editor = $this->ci->cms->get_section_editor($sub[0]['section_id']);
+					$x=0;
+					$cc = 'ijtech@eng.ui.ac.id';
+					foreach ($editor as $e) {
+						$data = array(
+							'journal_id' => $journal_id,
+							'journal_section' => $sub[0]['section_title'],
+							'editor' => $e
+						);
+						$message = $this->ci->load->view('template/mailer/editor/new_submission', $data, TRUE);
+						$this->ci->email->from(MAILSYSTEM, 'IJTech');
+						$this->ci->email->to($e['email']);
+						if($x == 0) $this->ci->email->cc($cc);
+						$this->ci->email->subject('[IJTech]: New Submission needs Initial Screening by EiC : #'.$journal_id);
+						$this->ci->email->message($message);
+						$is_send = $this->ci->email->send();
+						$x++;
+					}
+				}
+
+				if(!empty($msg_author)){
+					$this->ci->session->set_flashdata('success','Article successfully submitted.<br/>All related authors have been sent an email notification.<br/>'.implode(', ', $msg_author));				
+				}else{
+					$this->ci->cms->update('submission', array('sub_id', $sub_id), array('sub_status' => 0)); 
+					$this->ci->session->set_flashdata('warning','Trouble sending submission. Please check your internet connection.');
+				}
+			}
+	    	else $this->ci->session->set_flashdata('error','Trouble while saving data.');
+
+	    	redirect('dashboard/create/agreement/'.$sub_id);
+		}else{
+			$this->ci->session->set_flashdata('warning','Please add the author at least one.');
+	    	redirect('dashboard/create/author/'.$sub_id);
+		}
+	}
+
+	public function save_decision(){
+		$id = $this->ci->input->post('sub_id');
+		$status = $this->ci->input->post('sub_status');
+		$other = $this->ci->input->post('other');
+		$reason = array();
+		for ($a=0; $a < 5; $a++){
+			$name = 'r'.$a;
+			if ($this->ci->input->post($name))
+				array_push($reason, $this->ci->input->post($name));
+		}
+		if($other !== "")
+			array_push($reason, "<br/><i>".$other."</i>");
+		$data = array(
+			'sub_status' => $status,
+			'similarity_rate'	=> $this->ci->input->post('similarity_rate'),
+		);
+		if($status == 10)
+			$data['reason_back'] = !empty($reason) ? implode(',', $reason):'';
+
+		# set reminder to author revision
+		$author = $this->ci->cms->get_corresponding_author($id);
+		if($status == 7){
+			$set_reminder = array(
+				'sub_id' => $id,
+				'type'	=> 1,
+				'date_set'	=> date('Y-m-d H:i:s'),				
+				'date_remind'	=> date('Y-m-d H:i:s', strtotime('+'.DAY_REVISE_SCREENING.' days')),
+				'email_destination'	=> $author[0]['email'],
+			);
+			$data['round'] = 2;
+		}
+
+		$act = $this->ci->cms->update('submission', array('sub_id', $id), $data);
+		if($act){
+			$this->ci->cms->insert('reminder', $set_reminder);
+			$this->log_submission($sub_id, $status,'');
+			$this->ci->session->set_flashdata('success','Decision for this submission has been saved.');
+		}
+    	else $this->ci->session->set_flashdata('error','Trouble while saving data.');
+    	redirect('dashboard/detail/submission/'.$id);
+	}
+
+	public function update_reviewer(){
+		$id = $this->ci->input->post('sr_id');
+		$sub_id = $this->ci->input->post('sub_id');
+		$data = array(
+			'salutation'	=> $this->ci->security->xss_clean($this->ci->input->post('salutation')),
+			'fullname'	=> $this->ci->security->xss_clean($this->ci->input->post('fullname')),
+			'email'	=> $this->ci->security->xss_clean($this->ci->input->post('email')),
+			'expertise'	=> $this->ci->security->xss_clean($this->ci->input->post('expertise')),
+			'affiliation'	=> $this->ci->security->xss_clean($this->ci->input->post('affiliation')),
+		);
+		$act = $this->ci->cms->update('submission_reviewer', array('sr_id', $id), $data);
+		if($act){
+			$this->log('Update reviewer','submission_reviewer', $id);
+			$this->ci->session->set_flashdata('success','Reviewer has been updated.');
+		}
+    	else $this->ci->session->set_flashdata('error','Trouble while saving data.');
+    	redirect('dashboard/create/reviewer/'.$sub_id);
+	} 
+
+	public function update_author(){
+		$id = $this->ci->input->post('sa_id');
+		$sub_id = $this->ci->input->post('sub_id');
+		$data = array(
+			'salutation'	=> $this->ci->security->xss_clean($this->ci->input->post('salutation')),
+			'first_name'	=> $this->ci->security->xss_clean($this->ci->input->post('first_name')),
+			'last_name'	=> $this->ci->security->xss_clean($this->ci->input->post('last_name')),
+			'email'	=> $this->ci->security->xss_clean($this->ci->input->post('email')),
+			'scopus_id'	=> $this->ci->security->xss_clean($this->ci->input->post('scopus_id')),
+			'country'	=> $this->ci->security->xss_clean($this->ci->input->post('country')),
+			'affiliation'	=> $this->ci->security->xss_clean($this->ci->input->post('affiliation')),
+			'short_biography'	=> $this->ci->security->xss_clean($this->ci->input->post('short_biography')),
+		);
+		$act = $this->ci->cms->update('submission_author', array('sa_id', $id), $data);
+		if($act){
+			$this->log('Update author','submission_author', $id);
+			$this->ci->session->set_flashdata('success','Author has been updated.');
+		}
+    	else $this->ci->session->set_flashdata('error','Trouble while saving data.');
+    	redirect('dashboard/create/author/'.$sub_id);
+	} 
+
+	public function update_reviewer_status(){
+		$sub_id = $this->ci->input->post('sub_id');
+		$sr_id = $this->ci->input->post('sr_id');
+		$status = $this->ci->input->post('status');
+		$sub = $this->ci->cms->current_submission($sub_id);
+		$editor = $this->ci->cms->get_section_editor($sub[0]['section_id']);
+		$journal_id = ($sub[0]['round'] > 1 ? 'R'.($sub[0]['round']-1).'-':'').$sub[0]['section_abv'].'-'.$sub[0]['sub_id'];
+		if($status == 2){
+			$data = array(
+				'journal' => $sub,
+				'journal_id'=> $journal_id,
+				'editor'	=> $editor,
+				'reviewer'	=> $this->ci->cms->get_current_reviewer($sr_id),
+				'accepted'	=> site_url().'invitation/'.$sub_id.'/'.$sr_id.'/1',
+				'refused'	=> site_url().'invitation/'.$sub_id.'/'.$sr_id.'/2',
+			);
+			$email = $data['reviewer'][0]['email'];
+			$message = $this->ci->load->view('template/mailer/reviewer/reviewer_invitation', $data, TRUE);
+			$this->ci->load->library('email'); # load email library
+			$this->ci->email->from(MAILSYSTEM, 'IJTech');
+			$this->ci->email->to($email);
+			$this->ci->email->bcc(BCC_MAILSYSTEM_MULTI, 2);
+			$this->ci->email->subject('[IJTech]: Reviewer Invitation');
+			$this->ci->email->message($message);
+			// echo $email; die();
+			if($this->ci->email->send()){
+				# set reminder invitation				
+				$set_reminder = array(
+					'sub_id' => $sub_id,
+					'type'	=> 2,
+					'date_set'	=> date('Y-m-d H:i:s'),
+					'date_remind'	=> date('Y-m-d H:i:s', strtotime('+'.DAY_TO_ACCEPT_REVIEW.' days')),
+					'email_destination'	=> $email
+				);
+				$this->ci->cms->insert('reminder', $set_reminder);	
+
+				$this->ci->cms->update('submission_reviewer', array('sr_id', $sr_id), array('status' => $status));
+				$check = $this->ci->cms->check_count_reviewer_assign($sub_id);
+				if($check > 1){
+					$this->log('Sending email to reviewer to : '.$email,'submission_reviewer', '', $data['reviewer'][0]['sr_id']);
+					$this->log_submission($sub_id, 3 ,'');
+					$update = $this->ci->cms->update('submission', array('sub_id', $sub_id), array('sub_status' => 3));
+					if($update)
+						$this->ci->session->set_flashdata('success','Reviewer has been accepted. Email invitation has been sent. Submission status change to Review Assigment');
+					else
+						$this->ci->session->set_flashdata('warning','Reviewer has been accepted. Trouble sending Email invitation to suggested reviewer.');
+				}else
+					$this->ci->session->set_flashdata('success','Reviewer has been accepted. Email invitation has been sent.');
+
+			}else $this->ci->session->set_flashdata('error','Reviewer has been accepted. Trouble detected while sending email to reviewer. Please check your internet connection.');
+    		
+		}else{
+			$this->ci->cms->update('submission_reviewer', array('sr_id', $sr_id), array('status' => $status));
+			$this->ci->session->set_flashdata('warning','Reviewer has been declined.');
+		}
+    	redirect('dashboard/detail/submission/'.$sub_id);
+	} 
+
+	# funders
+	public function insert_funder(){
+		$page = $this->ci->input->post('page');
+		$data = array(
+			'sub_id'	=> $this->ci->input->post('sub_id'),
+			'funder_name' => $this->ci->security->xss_clean($this->ci->input->post('funder_name')),
+			'funder_desc' => $this->ci->security->xss_clean($this->ci->input->post('funder_desc')),
+			'award_number' => $this->ci->security->xss_clean($this->ci->input->post('award_number'))
+		);
+		$act = $this->ci->cms->upsert_funder($data);
+		if($act)
+			$this->ci->session->set_flashdata('success','Submissio funder has been added.');
+    	else $this->ci->session->set_flashdata('error','Trouble while saving data.');
+    	redirect($page);
+	}
+
+	public function sort_author(){
+		$page = $this->ci->input->post('page');
+		$id = $this->ci->input->post('id');
+		$sort = $this->ci->input->post('sort');
+		$act = $this->ci->cms->update('submission_author', array('sa_id', $id), array('sort' => $sort));
+		if ($act)
+			return true;
+		else
+			return false;
+	}
+	
+	/**
+	 * module review process
+	 */
+	public function insert_review(){
+		$id = $this->ci->input->post('review_id');
+		$page = $this->ci->input->post('page');
+		$email = $this->ci->session->userdata('email');
+		$point = array('Originality','Technical','Methodology','Readability','Practicability','Organization','Importance');
+		$data = array(
+			'sub_id' => $this->ci->input->post('sub_id'),
+			'reviewer_email' => $this->ci->input->post('reviewer_email'),
+			'review_type'	=> 0,
+			'introduction_comment'	=> $this->ci->security->xss_clean($this->ci->input->post('introduction_c')),
+			'methodology_comment'	=> $this->ci->security->xss_clean($this->ci->input->post('methodology_c')),
+			'result_comment'	=> $this->ci->security->xss_clean($this->ci->input->post('result_c')),
+			'discussion_comment'	=> $this->ci->security->xss_clean($this->ci->input->post('discussion_c')),
+			'references_comment'	=> $this->ci->security->xss_clean($this->ci->input->post('references_c')),
+			'other_comment'	=> $this->ci->security->xss_clean($this->ci->input->post('other_c')),
+			'additional_comment'	=> $this->ci->security->xss_clean($this->ci->input->post('additional_c')),
+			'date_review'	=> date('Y-m-d H:i:s'),
+		);
+		for($a=0; $a<count($point); $a++){
+			$data[strtolower($point[$a])] =  $this->ci->input->post(strtolower($point[$a]));
+		}
+
+		if($_FILES['userfile']['tmp_name'] !== ""){
+			$config['upload_path'] = './uploads/review/';
+			$config['allowed_types'] = 'pdf';
+			$config['max_size'] = '10240'; # Max size 10 MB
+			$config['overwrite'] = true;
+			
+			$ext = pathinfo($_FILES['userfile']['name'], PATHINFO_EXTENSION);
+			$fileName = "attach_review_".$id.'.'.$ext;
+			$config['file_name'] = $fileName;
+
+			$path = 'uploads/review/';
+			$this->ci->load->library('upload', $config);
+			if(!$this->ci->upload->do_upload()){
+				$msg = $this->ci->upload->display_errors();
+				$this->ci->session->set_flashdata('error','Trouble attach file.<br/>'.$msg);
+				$this->ci->session->set_flashdata('message','Upload Failed, please select PDF file.');
+				redirect($page);
+			}else
+				$data['review_url'] = $path.$fileName;
+		}
+		$upd = $this->ci->cms->update('submission_review', array('review_id', $id), $data);
+		if($upd)
+			$this->ci->session->set_flashdata('success','Success saving review data.');
+		else $this->ci->session->set_flashdata('error','Trouble saving review data.');
+		redirect(str_replace('/online','', $page));
+	}
+
+	public function update_review_status(){
+		$review_id = $this->ci->input->post('review_id');
+		$sub_id = $this->ci->input->post('sub_id');
+		$round = $this->ci->input->post('round');
+		$result = $this->ci->input->post('review_result');
+		$upd = $this->ci->cms->update('submission_review', array('review_id', $review_id), array('review_result'=>$result));
+		if($upd){
+			# send mail feedback
+			$sub = $this->ci->cms->current_submission($sub_id);
+			$journal_id = ($sub[0]['round'] > 1 ? 'R'.($sub[0]['round']-1).'-':'').$sub[0]['section_abv'].'-'.$sub[0]['sub_id'];
+			$editor = $this->ci->cms->get_section_editor($sub[0]['section_id']);
+			$data = array(
+				'journal' => $sub,
+				'journal_id'=> $journal_id,
+				'editor'	=> $editor,
+				'reviewer'	=> $this->ci->cms->get_user_reviewer($review_id),
+			);
+			$message = $this->ci->load->view('template/mailer/reviewer/after_reviewing', $data, TRUE);
+			$this->ci->load->library('email'); # load email library
+			$this->ci->email->from(MAILSYSTEM, 'IJTech');
+			$this->ci->email->to($data['reviewer'][0]['email']);
+			$this->ci->email->bcc(BCC_MAILSYSTEM_MULTI, 2);
+			$this->ci->email->subject('[IJTech]: Thank you for your review on manuscript #'.$journal_id);
+			$this->ci->email->message($message);
+			$msg = "Thank you for reviewing manuscript.";
+			if(!$this->ci->email->send())
+				$msg = "Trouble sending mail notification.";
+
+			# confirm reminder
+			$this->ci->load->model('Mdl_reminder','reminder');
+			$this->ci->reminder->cofirm_reminder($sub_id, $data['reviewer'][0]['email'], 3);
+
+			$check = $this->ci->cms->check_count_review($sub_id, $round);
+			if($check > 0){
+				$data = array('sub_status' => 5);
+				$set = $this->ci->cms->update('submission', array('sub_id', $sub_id), $data);
+				if($set) $this->log_submission($sub_id, 5, '');
+				else $this->ci->session->set_flashdata('warning','Trouble updating submission status.');
+			}else{			
+				$this->ci->session->set_flashdata('success','Saving journal review successfully.<br/>'.$msg);	
+			}
+		}else
+			$this->ci->session->set_flashdata('error','Trouble Saving journal review.');
+
+		redirect('dashboard/review/'.$sub_id.'/'.$review_id);
+	}
+
+	
+	public function submission_screening(){		
+		$author = $this->ci->input->post('author');
+		$page = $this->ci->input->post('page');
+		$other = $this->ci->security->xss_clean($this->ci->input->post('other'));
+		$data = array(
+			'sub_id'	=> $this->ci->security->xss_clean($this->ci->input->post('sub_id')),
+			'user_id'	=> $this->ci->session->userdata('user_id'),
+			'round'	=> $this->ci->security->xss_clean($this->ci->input->post('round')),
+			'status'	=> $this->ci->security->xss_clean($this->ci->input->post('status')),			
+			'notes_from_eic'	=> $this->ci->security->xss_clean($this->ci->input->post('notes_for_secretariat')),
+		);
+		if ($this->ci->input->post('similarity_rate'))
+			$data['similarity_rate'] = $this->ci->security->xss_clean($this->ci->input->post('similarity_rate'));
+		
+		if ($this->ci->input->post('section_id')){
+			$data['section_id'] = $this->ci->security->xss_clean($this->ci->input->post('section_id'));
+			$this->ci->cms->update('submission', array('sub_id', $data['sub_id']), array('section_id' => $data['section_id']));
+		}
+
+		// print_r($data); die;
+
+		$revise_days = $this->ci->input->post('revise_days') ? $this->ci->security->xss_clean($this->ci->input->post('revise_days')) : DAY_REVISE_SCREENING;
+
+		$reason = array();
+		for ($a=0; $a < 6; $a++){
+			$name = 'r'.$a;
+			if ($this->ci->input->post($name))
+				array_push($reason, $this->ci->input->post($name));
+		}
+		if($other !== "")
+			array_push($reason, "<i>".$other."</i>");
+		$data['reason_back'] = !empty($reason) ? implode(';', $reason): '';
+		
+		$from_eic = $this->ci->input->post('from_eic');
+		$screening_id = $this->ci->input->post('screening_id');
+
+		if($from_eic == 1){ # secretriat
+			$this->log_submission($data['sub_id'], 2, '');
+			$data['eic'] = 1;
+			unset($data['notes_from_eic']);
+			$act = $this->ci->cms->update('submission_screening', array('screening_id', $screening_id), $data);
+		}else $act = $this->ci->cms->insert('submission_screening', $data); #eic
+
+		if($act){
+			
+			$sts_mail = "Was Accepted";
+			$sts = 2;
+			$mail = ""; # if accepted no need to send mail
+
+			if($data['status'] == 2){
+				$sts_mail = "Need to be revised";
+				$sts = 7;
+				$subject = "Revise";
+				$mail = "initial_revise";
+			}
+			
+			if($data['status'] == 3){
+				$sts_mail = "Was Rejected";
+				$sts = 10;
+				$subject = "Reject";
+				$mail = "initial_reject";
+			}
+			if($from_eic)
+				$upd = $this->ci->cms->update('submission', array('sub_id', $data['sub_id']), array('sub_status' => $sts == 2 ? 3 : $sts));
+			else $upd = $this->ci->cms->update('submission', array('sub_id', $data['sub_id']), array('sub_status' => $sts));
+
+			if($upd){
+
+				# upload file final manuscript
+				$path = 'uploads/submission/screening/';
+				$filename = $data['sub_id'];
+				if($_FILES['userfile']['tmp_name'] !== ""){
+					$ext = pathinfo($_FILES['userfile']['name'], PATHINFO_EXTENSION);			
+					$fileName = $filename.'.'.$ext;
+					$config['file_name'] = $fileName;
+					$config['overwrite'] = true;
+					$config['upload_path'] = $path;
+					$config['max_size'] = '10240'; # Max size 10 MB
+					$config['allowed_types'] = 'pdf';
+					
+					$this->ci->load->library('upload', $config);
+					if(!$this->ci->upload->do_upload()){
+						$msg = $this->ci->upload->display_errors();
+						$this->ci->session->set_flashdata('invalid','Trouble uploading file.<br/>'.$msg);
+					}else $data['attach'] = './'.$path.$fileName;					
+				}
+
+				# send mail
+				if($mail !== ""){
+					$sub =  $this->ci->cms->current_submission($data['sub_id']);
+					$journal_id = ($sub[0]['round'] > 1 ? 'R'.($sub[0]['round']-1).'-':'').$sub[0]['section_abv'].'-'.$sub[0]['sub_id'];
+					$data['status'] = $sts_mail;
+					$data['journal_id'] = $journal_id;
+					$data['notes'] = $data['reason_back'];
+					$data['journal'] = $sub;
+					$data['revise_days'] = $revise_days;
+					$data['author'] = $this->ci->cms->get_corresponding_author($data['sub_id']);
+					$other_author = $this->ci->cms->get_other_author($data['sub_id'], true);
+					
+					$email = $data['author'][0]['email'];
+					$message = $this->ci->load->view('template/mailer/author/'.$mail, $data, TRUE);
+					$this->ci->load->library('email'); # load email library
+					$this->ci->email->from(MAILSYSTEM, 'IJTech');
+					$this->ci->email->to($email);
+
+					if(NOTIF_ALL_AUTHOR){
+						if(!empty($other_author))
+							$this->ci->email->cc(implode(',', $other_author));
+					}
+					if(isset($data['attach']))
+						$this->ci->email->attach($data['attach']);
+					
+					$this->ci->email->bcc(BCC_MAILSYSTEM_MULTI, 2);
+					$this->ci->email->subject('[IJTech]: '.$subject.' initial screening manuscript #'.$journal_id);
+					$this->ci->email->message($message);				
+					if($this->ci->email->send()){
+						if($sts == 10)
+							$this->log_submission($sub[0]['sub_id'], 10, 'Rejected manuscript');
+
+						$this->log('Sending email to corresponding author about editor decision manuscript round "'.$data['round'].'", email : '.$email, 'submission_author', $data['author'][0]['email']);						
+					}
+					# save reminder queue
+					if($sts == 7){
+						$set_reminder = array(
+							'sub_id' => $data['sub_id'],
+							'type'	=> 1,
+							'date_set'	=> date('Y-m-d H:i:s'),
+							'date_remind'	=> date('Y-m-d H:i:s', strtotime('+'.ceil($revise_days/2).' days')),
+							'email_destination'	=> $email
+						);
+						$this->ci->cms->insert('reminder', $set_reminder);
+					}
+					$this->ci->session->set_flashdata('info','Sending email to corresponding author.');
+				}else{
+					# if accepted 
+					$this->ci->session->set_flashdata('success','Succeessfull saving data.');
+				}
+			}
+		}
+		redirect($page);
+	}
+
+	public function save_editor_decision(){
+		$author = $this->ci->input->post('author');
+		$page = $this->ci->input->post('page');
+		$other = $this->ci->security->xss_clean($this->ci->input->post('other'));
+		$data = array(
+			'sub_id'	=> $this->ci->security->xss_clean($this->ci->input->post('sub_id')),
+			'user_id'	=> $this->ci->session->userdata('user_id'),
+			'round'	=> $this->ci->security->xss_clean($this->ci->input->post('round')),
+			'status'	=> $this->ci->security->xss_clean($this->ci->input->post('status')),
+			'type'	=> 1,
+			'reason_back'	=> $other,
+		);
+		$revise_days = $this->ci->input->post('revise_days') ? $this->ci->input->post('revise_days') : DAY_REVISE_SCREENING;		
+
+		$act = $this->ci->cms->insert('submission_screening', $data);
+		if($act){
+			if($data['status'] == 2){
+				$sts_mail = 'Need to be Revised';
+				$sts = 7;				
+				$data['round'] = $data['round'];
+				$mail = 'decision_revise';
+			}
+			else if($data['status']	== 1){
+				$sts_mail = 'Accepted';
+				$sts = 8;
+				$mail = 'decision_accept';
+				$this->log_submission($data['sub_id'], 8, '');
+			}
+			else{
+				$sts_mail = 'Rejected';
+				$sts = 10;	
+				$mail = 'decision_reject';
+				$this->log_submission($data['sub_id'], 10, '');
+			} 
+			
+			$data['review_result'] = $this->ci->cms->get_review_submission($data['sub_id'], $data['round']);
+			$upd = $this->ci->cms->update('submission', array('sub_id', $data['sub_id']), array('sub_status' => $sts, 'round' => $data['round']));
+			
+			if($upd){
+				$sub = $this->ci->cms->current_submission($data['sub_id']);
+				$editor = $this->ci->cms->get_section_editor($sub[0]['section_id']);
+				$journal_id = ($sub[0]['round'] > 1 ? 'R'.($sub[0]['round']-1).'-':'').$sub[0]['section_abv'].'-'.$sub[0]['sub_id'];
+				# send mail to author
+				$data['status'] = $sts_mail;
+				$data['notes'] = $data['reason_back'];
+				$data['journal'] = $sub;
+				$data['revise_days'] = $revise_days;
+				$data['editor'] = $editor;
+				$data['journal_id'] = $journal_id;
+
+				$data['author'] = $this->ci->cms->get_corresponding_author($data['sub_id']);
+				$other_author = $this->ci->cms->get_other_author($data['sub_id'], true);
+				$email = $data['author'][0]['email'];
+				
+				$this->ci->load->library('email'); # load email library
+				$this->ci->email->from(MAILSYSTEM, 'IJTech');
+				$this->ci->email->to($email);
+				
+				if(NOTIF_ALL_AUTHOR){
+					if(!empty($other_author))
+						$this->ci->email->cc(implode(',',$other_author));
+				}
+
+				$this->ci->email->bcc(BCC_MAILSYSTEM_MULTI, 2);
+				$this->ci->email->subject('[IJTech]: Editor Decision');
+				$message = $this->ci->load->view('template/mailer/author/'.$mail, $data, TRUE);
+				$this->ci->email->message($message);
+				if($this->ci->email->send()){
+					if($sts == 10)
+						$this->log_submission($sub[0]['sub_id'], 10, 'Rejected manuscript');
+
+					$this->log('Sending email to corresponding author about editor decision manuscript round "'.$data['round'].'", email : '.$email, 'submission_author', $data['author'][0]['email']);
+				}
+				# save reminder queue
+				if($sts == 7){							
+					$set_reminder = array(
+						'sub_id' => $data['sub_id'],
+						'type'	=> 1,
+						'date_set'	=> date('Y-m-d H:i:s'),
+						'date_remind'	=> date('Y-m-d H:i:s', strtotime('+'.ceil($revise_days/2).' days')),
+						'email_destination'	=> $email
+					);
+					$this->ci->cms->insert('reminder', $set_reminder);
+				}
+				$this->ci->session->set_flashdata('success','Sending email to corresponding author successfully');
+			}
+		}
+		redirect($page);
+	}
+
+	public function revise_agreement(){
+		$page = $this->ci->input->post('page');
+		$sub_id = $this->ci->input->post('sub_id');
+		$round = $this->ci->input->post('round');
+		$action = $this->ci->input->post('action');
+		$url = site_url().'dashboard/edit/submission/'.$sub_id;
+		$upd = $this->ci->cms->revise_agreement($sub_id);
+		if($action == "No"){
+			$url = $page;
+			$act = $this->ci->cms->update('submission', array('sub_id', $sub_id), array('sub_status' => 10));
+			if($act)
+				$this->log_submission($sub_id, 10, 'Decline to revise');
+			$this->ci->session->set_flashdata('info','Submitted manuscript has been store to completed manuscript.');
+		}else{
+			$this->log_submission($sub_id, 7, 'Start revise manuscript');
+			$this->ci->session->set_flashdata('info','Submitted manuscript ready to revise.');
+		}
+		redirect($url);
+	}
+
+	public function send_response_letter(){
+		
+		$sub_id = $this->ci->input->post('sub_id');
+		$author = $this->ci->input->post('author');
+		$round = $this->ci->input->post('round');
+		$page = $this->ci->input->post('page');
+		$ids = $this->ci->input->post('sr_id');
+
+		$sub = $this->ci->cms->current_submission($sub_id);
+		$journal_id = ($sub[0]['round'] > 1 ? 'R'.($sub[0]['round']-1).'-':'').$sub[0]['section_abv'].'-'.$sub[0]['sub_id'];
+		$editor = $this->ci->cms->get_section_editor($sub[0]['section_id']);
+		$file = $this->ci->cms->get_manuscript_file_type($sub_id, $round, 2);
+		$letter = $this->ci->cms->get_manuscript_file_type($sub_id, $round, 4);
+		$is_send = true;
+		
+		$reviewer = $this->ci->cms->get_submission_reviewer_active($sub_id);
+		if(!empty($ids))
+			$reviewer = $this->ci->cms->get_reviewers_from_ids($ids);
+				
+		foreach($reviewer as $rev){
+			# send email			
+			$set_reminder = array(
+				'sub_id' => $sub_id,
+				'type'	=> 3,
+				'date_set'	=> date('Y-m-d H:i:s'),
+				'date_remind'	=> date('Y-m-d H:i:s', strtotime('+'.DAY_TO_REVIEW_MANUSCRIPT.' days')),
+				'email_destination'	=> $rev['email']
+			);
+			$this->ci->cms->insert('reminder', $set_reminder);
+
+			$data = array(
+				'journal' => $sub,
+				'journal_id'=> $journal_id,
+				'editor'	=> $editor,
+				'reviewer'	=> $rev,					
+			);
+
+			$message = $this->ci->load->view('template/mailer/reviewer/invitation_revise', $data, TRUE);
+			$this->ci->load->library('email'); // load email library
+			$this->ci->email->clear(TRUE);
+			$this->ci->email->from(MAILSYSTEM, 'IJTech');
+			$this->ci->email->to($rev['email']);
+			$this->ci->email->bcc(BCC_MAILSYSTEM_MULTI, 2); 
+			$this->ci->email->subject('[IJTech]: Manuscript and Response Letter');
+			$this->ci->email->message($message);
+			if(file_exists($file[0]['file_url']))
+				$this->ci->email->attach('./'.$file[0]['file_url']);
+			if(file_exists($letter[0]['file_url']))
+				$this->ci->email->attach('./'.$letter[0]['file_url']);
+			if($this->ci->email->send()){
+				$this->ci->cms->insert('submission_review', array('sub_id' => $sub_id, 'reviewer_email' => $rev['email'], 'round' => $round));
+			}else $is_send = false;
+		}
+		
+		if($is_send){
+			$set = $this->ci->cms->update('submission', array('sub_id', $sub_id), array('sub_status' => 4));
+			if($set){
+				$this->log_submission($sub_id, 4, 'Response letter receive to reviewers');
+				$this->ci->session->set_flashdata('success','Response letter has been sent to reviewers');
+			}else
+				$this->ci->session->set_flashdata('error','Failed sending response letter, Please try again!');
+		}
+		redirect($page);
+	}
+
+	public function publish_submission(){
+		$sub_id = $this->ci->input->post('sub_id');
+		$page = site_url().'dashboard/process/'.$sub_id;
+		$data = array(
+			'date_publish'	=> date('Y-m-d H:i:s'),
+			'sub_status'	=> 11,
+		);
+		$act = $this->ci->cms->update('submission', array('sub_id', $sub_id), $data);
+		if($act){
+			$this->log('Inpress process manuscript', 'submission', $sub_id);
+			$this->log_submission($sub_id, 11, 'In Press Process');
+			$this->ci->session->set_flashdata('success','Manuscript has been moved publishing process.');			
+		}else
+			$this->ci->session->set_flashdata('error','Failed publishing manuscript!. Please check internet connection.');
+
+		redirect($page);
+	}
+
+	public function publish_journal(){
+		$sub_id = $this->ci->input->post('sub_id');
+		$page = $this->ci->input->post('page');
+		$data = array(
+			'date_publish' => date('Y-m-d H:i:s'),
+			'doi_url'	=> $this->ci->security->xss_clean($this->ci->input->post('doi_url'))
+		);
+		$act = $this->ci->cms->update('journal', array('sub_id', $sub_id), array('date_publish' => $data));
+		if($act){
+			$this->log('Publish Journal', 'journal', $sub_id);
+			$this->log_submission($sub_id, 9, 'Publish Manuscript');
+			$this->ci->session->set_flashdata('success','Succeessfully publish journal.');
+		}else
+			$this->ci->session->set_flashdata('error','Failed publishing journal!. Please check internet connection.');
+
+		redirect($page);
+	}
+
+
+	/**
+	 * save journal base on section
+	 *
+	 */
+	private function data_step($step, $migrate = false){
+		switch($step){
+			case "article" : {
+				$sub_id = $this->ci->security->xss_clean($this->ci->input->post('sub_id'));
+				$issue_id = $this->ci->security->xss_clean($this->ci->input->post('issue_id'));
+				$is = $this->ci->cms->current_issue($issue_id);
+				$doi_url = 'https://doi.org/10.14716/ijtech.v'.$is[0]['volume'].'i'.$is[0]['issue_number'].'.'.$sub_id;
+				$data = array(					
+					'sub_id'	=> $sub_id,
+					'issue_id'	=> $issue_id,
+					'title'	=> $this->ci->security->xss_clean($this->ci->input->post('title')),
+					'keywords'	=> $this->ci->security->xss_clean($this->ci->input->post('keywords')),
+					'abstract'	=> $this->ci->input->post('abstract'),
+					'doi_url'	=> $doi_url
+				);
+				if($migrate)
+					$data['section_id'] = $this->ci->security->xss_clean($this->ci->input->post('section_id'));
+
+			} break;
+			case "introduction" : {
+				$data = array(
+					'introduction'	=> $this->ci->input->post('introduction')
+				);
+			} break;
+			case "experimental" : {
+				$data = array(
+					'experimental_method'	=> $this->ci->input->post('experimental_method')
+				);
+			} break;
+			case "result" : {
+				$data = array(
+					'result'	=> $this->ci->input->post('result')
+				);
+			} break;
+			case "conclusion" : {
+				$data = array(
+					'conclusion'	=> $this->ci->input->post('conclusion')
+				);
+			} break;
+			case "acknowledgement" : {
+				$data = array(
+					'acknowledgement'	=> $this->ci->input->post('acknowledgement')
+				);
+			} break;
+			case "references" : {
+				$data = array(
+					'references'	=> $this->ci->input->post('references')
+				);
+			} break;
+			case "authors" : {
+				$data = array(
+					'sa_id' => $this->ci->input->post('sa_id'),
+					'sub_id' => $this->ci->input->post('sub_id'),
+					'salutation' => $this->ci->input->post('salutation'),
+					'first_name' => $this->ci->security->xss_clean($this->ci->input->post('first_name')),
+					'last_name' => $this->ci->security->xss_clean($this->ci->input->post('last_name')),
+					'email' => $this->ci->security->xss_clean($this->ci->input->post('email')),
+					'affiliation' => $this->ci->security->xss_clean($this->ci->input->post('affiliation')),
+					'country' => $this->ci->security->xss_clean($this->ci->input->post('country')),
+				);
+			} break;			
+			case "suplement" : {
+				$data = array(
+					'sub_id' => $this->ci->input->post('sub_id'),
+					'type' => $this->ci->input->post('type'),
+				);
+			} break;
+
+			case "file" : {
+				$data = array(
+					'pages'	=> $this->ci->input->post('pages'),
+					'cite'	=> $this->ci->input->post('cite')
+				);
+			} break;
+
+			case "publish" : {
+				$date_submit = $this->ci->input->post('date_submit').' 00:00:00';
+				$date_accept = $this->ci->input->post('date_accept').' 00:00:00';
+				$date_publish = $this->ci->input->post('date_publish').' 00:00:00';
+				$data = array(
+					'sub_id'	=> $this->ci->security->xss_clean($this->ci->input->post('sub_id')),
+					'doi_url'	=> $this->ci->security->xss_clean($this->ci->input->post('doi_url')),
+					'date_publish'	=> date('Y-m-d H:i:s')
+				);
+				if($migrate){
+					$data['date_submit'] = $date_submit;
+					$data['date_accept'] = $date_accept;
+					$data['date_publish'] = $date_publish;
+				}
+			} break;
+		}
+		return $data;
+	}
+
+	public function save_journal(){
+		$id = $this->ci->input->post('sub_id');
+		$section_id = $this->ci->input->post('section_id');
+		$step = $this->ci->input->post('step');
+		$page = $this->ci->input->post('page');
+		$submit = $this->ci->input->post('submit');
+		$next = $this->navprocess($id, $step, 'next');
+
+		# set atribut		
+		$data = $this->data_step($step);
+		if($step == 'article'){
+			if ($this->ci->cms->check_journal_exists($id) > 0)
+				$upd = $this->ci->cms->update('journal', array('sub_id', $id), $data);
+				if($upd){
+					unset($data['issue_id']);
+					$data['sub_title'] = $data['title'];
+					unset($data['title'], $data['doi_url']);					
+					$act = $this->ci->cms->update('submission', array('sub_id', $id), $data);
+				}
+			else{
+				$data['date_revise'] = $this->ci->cms->get_date_log($id, 7);
+				$data['date_submit'] = $this->ci->cms->get_date_log($id, 1);
+				$data['date_accept'] = $this->ci->cms->get_date_log($id, 8);
+				$act = $this->ci->cms->insert('journal', $data);
+			}
+		}else{
+			if($step == 'file'){
+				# upload file final manuscript
+				$path = 'uploads/submission/manuscript/'.$id.'/';
+				$filename = $this->ci->input->post('filename');
+				if($_FILES['userfile']['tmp_name'] !== ""){
+					$ext = pathinfo($_FILES['userfile']['name'], PATHINFO_EXTENSION);			
+					$fileName = $filename.'.'.$ext;
+					$config['file_name'] = $fileName;
+					$config['overwrite'] = true;
+					$config['upload_path'] = $path;
+					$config['max_size'] = '10240'; # Max size 10 MB
+					$config['allowed_types'] = 'pdf';
+					
+					$this->ci->load->library('upload', $config);
+					if(!$this->ci->upload->do_upload()){
+						$msg = $this->ci->upload->display_errors();
+						$this->ci->session->set_flashdata('invalid','Trouble uploading file.<br/>'.$msg);
+					}else{
+						$data['pdf_file'] = $path.$fileName;
+						$act = $this->ci->cms->update('journal', array('sub_id', $id), $data);
+					}
+				}else
+					$act = $this->ci->cms->update('journal', array('sub_id', $id), $data);
+				
+			}else if($step == 'publish'){
+				$this->ci->cms->update('submission', array('sub_id', $id), array('sub_status' => 9));
+				$this->log_submission($id, 9, 'Finish inpress process');
+				$act = $this->ci->cms->update('journal', array('sub_id', $id), $data);
+
+				# SEND MAIL TO AUTHOR
+				$cj = $this->ci->cms->get_current_journal($id);
+				$issue_label = "Volume ".$cj[0]['volume']." Issue ".$cj[0]['issue_number'].", ".date('M Y', strtotime($cj[0]['issue_publish']));
+				$maildata = array(
+					'author'	=> $this->ci->cms->get_corresponding_author($id),
+					'journal'	=> $this->ci->cms->current_submission($id),
+					'issue_url'	=> site_url().'issue/'.$cj[0]['issue_id'],
+					'issue_label'	=> $issue_label,
+				);
+			
+				$email = $maildata['author'][0]['email'];
+				$message = $this->ci->load->view('template/mailer/author/published', $maildata, TRUE);
+				$this->ci->load->library('email'); # load email library
+				$this->ci->email->from(MAILSYSTEM, 'IJTech');
+				$this->ci->email->to($email);
+				$this->ci->email->bcc(BCC_MAILSYSTEM_MULTI, 2);
+				$this->ci->email->subject('Journal Publishing : '.$issue_label);
+				$this->ci->email->message($message);
+				$this->ci->email->send();
+
+			}else{
+				$act = $this->ci->cms->update('journal', array('sub_id', $id), $data);
+			}
+		}
+		if($act)
+			$this->ci->session->set_flashdata('success','Succeessfully saving data.');
+		else $this->ci->session->set_flashdata('danger','Trouble saving data.');
+		if($submit == 'Save' || $submit == 'Publish')
+			redirect($page);
+		else redirect($next);
+	}
+	
+	/**
+	 * untuk keperluan migrasi data
+	 * process mirip kaya ketika aku melamarmu ke walimu.
+	 */
+	public function migrate_journal(){
+		$id = $this->ci->input->post('sub_id');
+		$step = $this->ci->input->post('step');
+		$page = $this->ci->input->post('page');
+		$submit = $this->ci->input->post('submit');
+		
+		if($id != null)
+			$next = $this->navprocess($id, $step, 'next', true);
+		
+		$data = $this->data_step($step, true);
+		
+		if($step == 'article'){
+			if ($this->ci->cms->check_journal_exists($id) > 0){
+				unset($data['section_id'], $data['doi_url']);
+				$upd = $this->ci->cms->update('journal', array('sub_id', $id), $data);
+				if($upd){
+					unset($data['issue_id']);
+					$data['sub_title'] = $data['title'];
+					unset($data['title']);					
+					$act = $this->ci->cms->update('submission', array('sub_id', $id), $data);
+				}
+			}
+			else{				
+				$id = $this->ci->cms->migrate_journal($data);
+				$next = $this->navprocess($id, $step, 'next', true);
+			}
+		}else if($step == 'authors'){
+			// Upsert Uuthors
+			if($data['sa_id'] !== ''){
+				$sa_id = $data['sa_id'];
+				unset($data['sa_id']);
+				$act = $this->ci->cms->update('submission_author', array('sa_id', $sa_id), $data);
+			}else $act = $this->ci->cms->insert('submission_author', $data);
+
+		}else if($step == "publish"){
+			// update submission & journal status
+			$sub_id = $data['sub_id'];
+			unset($data['sub_id']);			
+			$this->ci->cms->update('submission', array('sub_id', $sub_id), array('sub_status'=> 9, 'date_publish' => $data['date_publish'], 'date_submit' => $data['date_submit']));
+			$this->ci->cms->update('journal', array('sub_id', $sub_id), $data);
+
+		}else if($step == "suplement"){
+
+			$path = 'uploads/submission/attachment/'.$data['sub_id'].'/';
+			if(!file_exists($path))
+				mkdir($path);
+			
+			$ext = pathinfo($_FILES['userfile']['name'], PATHINFO_EXTENSION);
+			$fileName = $this->ci->lib_view->gen_manuscript_name($data['sub_id']).'.'.$ext;
+			$config['file_name'] = $fileName;
+			$config['overwrite'] = false;
+			$config['upload_path'] = $path;
+			$config['max_size'] = '10240'; # Max size 10 MB
+			$config['allowed_types'] = 'jpg|jpeg|png|gif';
+			$this->ci->load->library('upload', $config);
+			if(!$this->ci->upload->do_upload()){
+				$msg = $this->ci->upload->display_errors();
+				$this->ci->session->set_flashdata('invalid','Trouble uploading file.<br/>'.$msg);
+			}else{
+				$data['file_url'] = $path.$fileName;
+				$act = $this->ci->cms->insert('submission_file', $data);				
+			}
+
+		}else if($step == "file"){
+			# upload file final manuscript
+			$path = 'uploads/submission/manuscript/'.$id.'/';
+			if(!file_exists($path))
+				mkdir($path);
+			
+			$filename = $this->ci->input->post('filename');
+			if($_FILES['userfile']['tmp_name'] !== ""){
+				$ext = pathinfo($_FILES['userfile']['name'], PATHINFO_EXTENSION);			
+				$fileName = $filename.'.'.$ext;
+				$config['file_name'] = $fileName;
+				$config['overwrite'] = true;
+				$config['upload_path'] = $path;
+				$config['max_size'] = '10240'; # Max size 10 MB
+				$config['allowed_types'] = 'pdf';
+				
+				$this->ci->load->library('upload', $config);
+				if(!$this->ci->upload->do_upload()){
+					$msg = $this->ci->upload->display_errors();
+					$this->ci->session->set_flashdata('invalid','Trouble uploading file.<br/>'.$msg);				
+				}else{
+					$data['pdf_file'] = $path.$fileName;					
+					$act = $this->ci->cms->update('journal', array('sub_id', $id), $data);
+				}
+			}else $act = $this->ci->cms->update('journal', array('sub_id', $id), $data); 
+		}else{
+			$act = $this->ci->cms->update('journal', array('sub_id', $id), $data);
+		}
+
+		if($act)
+			$this->ci->session->set_flashdata('success','Succeessfully saving data.');
+		else $this->ci->session->set_flashdata('danger','Trouble saving data.');
+		if($submit == 'Save' || $submit == 'Publish'){
+			if($step == "authors"){
+				$page = explode('authors', $page);
+				redirect($page[0].'authors');
+			}
+			if($submit == "Publish")
+				$page = site_url()."dashboard/submission/status/completed";
+
+			redirect($page);
+		}
+		else redirect($next);
+	}
+
+	private function navprocess($id, $step, $condition, $migrate = false){
+		$url = site_url().'dashboard/process/'.$id.'/';
+		if($migrate){
+			$url = site_url().'dashboard/migrate/'.$id.'/';	
+			if($condition == 'next'){
+				switch($step){
+					case "article": $url .='introduction'; break;
+					case "introduction": $url .='experimental'; break;
+					case "experimental": $url .='result'; break;
+					case "result": $url .='conclusion'; break;
+					case "conclusion": $url .='acknowledgement'; break;
+					case "acknowledgement": $url .='references'; break;
+					case "references": $url .='authors'; break;
+					case "authors": $url .='suplement'; break;
+					case "suplement": $url .='file'; break;
+					case "file": $url .='publish'; break;
+					case "publish": $url ='#'; break;
+				}
+				return $url;
+			}
+		}else{
+			if($condition == 'next'){
+				switch($step){
+					case "article": $url .='introduction'; break;
+					case "introduction": $url .='experimental'; break;
+					case "experimental": $url .='result'; break;
+					case "result": $url .='conclusion'; break;
+					case "conclusion": $url .='acknowledgement'; break;
+					case "acknowledgement": $url .='references'; break;
+					case "references": $url .='file'; break;
+					case "file": $url .='publish'; break;
+					case "publish": $url ='#'; break;
+				}
+				return $url;
+			}
+		}
+	}
+
+	/**
+	 * module people
+	 */
+	public function insert_people(){
+    	$data = array(
+    		'fullname' 	=> $this->ci->security->xss_clean($this->ci->input->post('fullname')),
+    		'email'		=> $this->ci->security->xss_clean($this->ci->input->post('email')),
+    		'url'		=> $this->ci->security->xss_clean($this->ci->input->post('email')),
+    		'google_scholar'	=> $this->ci->security->xss_clean($this->ci->input->post('gscholar')),
+    		'research_gate'		=> $this->ci->security->xss_clean($this->ci->input->post('rgate')),
+    		'scopus'		=> $this->ci->security->xss_clean($this->ci->input->post('scopus')),
+    		'status'	=> $this->ci->security->xss_clean($this->ci->input->post('status')),
+    		'affiliation'	=> $this->ci->security->xss_clean($this->ci->input->post('affiliation')),
+     		'country'	=> $this->ci->input->post('country'),
+    		'date_input'		=> date('Y-m-d H:i:s'),
+    		'date_update'		=> date('Y-m-d H:i:s'),
+    	);
+
+    	if($_FILES['userfile']['tmp_name'] !== ""){
+			$config['upload_path'] = './uploads/team/';
+			$config['allowed_types'] = 'jpg|jpef|png|gif';
+			$config['max_size'] = '2048'; # Max size 2 MB
+			$config['overwrite'] = true;
+			
+			$ext = pathinfo($_FILES['userfile']['name'], PATHINFO_EXTENSION);
+			$fileName = mt_rand(0000,9999).'.'.$ext;
+			$config['file_name'] = $fileName;
+
+			$path = 'uploads/team/';
+			$this->ci->load->library('upload', $config);
+			if(!$this->ci->upload->do_upload()){
+				$msg = $this->ci->upload->display_errors();
+				$this->ci->session->set_flashdata('error','Trouble saving photo image.<br/>'.$msg);
+			}else{
+				$data['photo'] = $path.$fileName;
+			}
+		}
+		$act = $this->ci->cms->insert('people', $data);
+		if($act)
+			$this->ci->session->set_flashdata('success','New People has been created.');
+		else $this->ci->session->set_flashdata('error','Trouble saving data.');
+    	redirect('dashboard/people');
+    }
+
+	public function update_people(){
+		$id = $this->ci->input->post('pid');
+    	$data = array(
+    		'fullname' 	=> $this->ci->security->xss_clean($this->ci->input->post('fullname')),
+    		'email'		=> $this->ci->security->xss_clean($this->ci->input->post('email')),
+    		'url'		=> $this->ci->security->xss_clean($this->ci->input->post('email')),
+    		'google_scholar'	=> $this->ci->security->xss_clean($this->ci->input->post('gscholar')),
+    		'research_gate'		=> $this->ci->security->xss_clean($this->ci->input->post('rgate')),
+    		'scopus'		=> $this->ci->security->xss_clean($this->ci->input->post('scopus')),
+    		'status'	=> $this->ci->security->xss_clean($this->ci->input->post('status')),
+    		'affiliation'	=> $this->ci->security->xss_clean($this->ci->input->post('affiliation')),
+     		'country'	=> $this->ci->input->post('country'),    		
+    		'date_update'		=> date('Y-m-d H:i:s'),
+    	);
+
+    	if($_FILES['userfile']['tmp_name'] !== ""){
+			$config['upload_path'] = './uploads/team/';
+			$config['allowed_types'] = 'jpg|jpef|png|gif';
+			$config['max_size'] = '2048'; # Max size 2 MB
+			$config['overwrite'] = true;
+			
+			$ext = pathinfo($_FILES['userfile']['name'], PATHINFO_EXTENSION);
+			$fileName = mt_rand(0000,9999).'.'.$ext;
+			$config['file_name'] = $fileName;
+
+			$path = 'uploads/team/';
+			$this->ci->load->library('upload', $config);
+			if(!$this->ci->upload->do_upload()){
+				$msg = $this->ci->upload->display_errors();
+				$this->ci->session->set_flashdata('error','Trouble saving photo image.<br/>'.$msg);
+			}else{
+				$data['photo'] = $path.$fileName;
+			}
+		}
+		$act = $this->ci->cms->update('people', array('pid', $id), $data);
+		if($act)
+			$this->ci->session->set_flashdata('success','People has been updated.');
+		else $this->ci->session->set_flashdata('error','Trouble saving data.');
+    	redirect('dashboard/people');
+    }
+
+    # update feature 29 April 2017
+    # ========================================
+    public function change_privilage(){
+    	$page = $this->ci->input->post('page');
+    	$user_id = $this->ci->input->post('user_id');
+    	$role = $this->ci->input->post('role');
+    	$act = $this->ci->cms->change_privilage($user_id, $role);
+    	if($act)
+			$this->ci->session->set_flashdata('success','User privilage has been updated.');
+		else $this->ci->session->set_flashdata('error','Trouble saving data.');
+    	redirect($page);
+    }
+
+}
